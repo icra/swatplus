@@ -119,8 +119,12 @@
         depth = rchdep
       endif
 
-      !! 1236 format ("Found:", 2x, a)
 
+      !! 1236 format ("Found:", 2x, a)
+      if (jrch == 46 .or. jrch == 38 .or. jrch == 7) then
+        write (*,*) ob((sp_ob1%chandeg) + jrch - 1)%name, 'cbod', ht1%cbod
+      endif
+      
       do ipoll = 1, num_poll
         jpoll = ipoll
 
@@ -136,7 +140,7 @@
         !! calculate mass of pollutant in bed sediment
         sedpollmass = ch_benthic(jrch)%poll(ipoll)
 
-        if (jrch == 44 .or. jrch == 5 .or. jrch == 4 .or. jrch == 17) then
+        if (jrch == 46 .or. jrch == 38 .or. jrch == 7) then
           write (*,*) ob((sp_ob1%chandeg) + jrch - 1)%name, polldb(ipoll)%name, chpollmass, sedpollmass
         endif
 
@@ -158,10 +162,11 @@
           
           !! set kd
           !kd = polldb(ipoll)%koc * sd_ch(jrch)%carbon / 100.
+          kd = 0.5  ! PROVA ICRA
 
           !! calculate fraction of soluble and sorbed pollutant
-          !frsol = 1. / (1. + kd * sedcon)
-          !frsrb = 1. - frsol
+          frsol = 1. / (1. + kd * sedcon)
+          frsrb = 1. - frsol
 
           !! ASSUME DENSITY=2.6E6; KD2=KD1
           !por = 1. - sd_ch(jrch)%ch_bd / 2.65
@@ -227,7 +232,7 @@
           chpollmass = chpollmass + chpoll%poll(ipoll)%resus
 
           !! calculate diffusion of pollutant between reach and sediment
-          !chpoll%poll(ipoll)%difus = sd_ch(jrch)%aq_mix(ipoll) * (fd2 * sedpollmass - frsol * chpollmass) * tday / depth
+          !chpoll%poll(ipoll)%difus = sd_ch(jrch)%aq_mix_poll(ipoll) * (fd2 * sedpollmass - frsol * chpollmass) * tday / depth
           !if (chpoll%poll(ipoll)%difus > 0.) then
           !  if (chpoll%poll(ipoll)%difus > sedpollmass) then
           !    chpoll%poll(ipoll)%difus = sedpollmass

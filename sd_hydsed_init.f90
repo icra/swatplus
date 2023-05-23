@@ -71,7 +71,7 @@
       real :: rto          !none              |ratio of channel volume to total volume
       real :: rto1         !none              |ratio of flood plain volume to total volume
 
-      real :: irec         !OLlorente         |Nova variable que fa la funció que feia la variable "ich" a la funció que inicialitza els pollutants representant l'iterador dels recall points
+      integer :: irec         !OLlorente         |Nova variable que fa la funció que feia la variable "ich" a la funció que inicialitza els pollutants representant l'iterador dels recall points
       
       do i = 1, sp_ob%chandeg
         icmd = sp_ob1%chandeg + i - 1
@@ -158,8 +158,8 @@
       end do
         
       !! Compute storage time constant for reach (msk_co1 + msk_co2 = 1.)
-	  msk1 = bsn_prm%msk_co1 / (bsn_prm%msk_co1 + bsn_prm%msk_co2)
-	  msk2 = bsn_prm%msk_co2 / (bsn_prm%msk_co1 + bsn_prm%msk_co2)
+	    msk1 = bsn_prm%msk_co1 / (bsn_prm%msk_co1 + bsn_prm%msk_co2)
+	    msk2 = bsn_prm%msk_co2 / (bsn_prm%msk_co1 + bsn_prm%msk_co2)
       xkm = sd_ch(i)%stor_dis_bf * msk1 + sd_ch(i)%stor_dis_01bf * msk2
       
       !! Muskingum numerical stability -Jaehak Jeong, 2011
@@ -235,7 +235,6 @@
       
       !! TODO: ICRA Inicialitzar dades de pollutants a dins el canal
       !! cal replicar la funció de init dels pesticides
-
       num_poll = cs_db%num_poll
 
       write (*,1234) "Start loading of pollutants: ", num_poll
@@ -246,7 +245,6 @@
 
         do ipoll = 1, num_poll
           if (poll_om(irec, ipoll)%load > 0) then
-            print *, "poll_om > 0"
             if(ob(iob)%obtyp_out(1) == 'sdc') then
 
               icha = ob(iob)%obtypno_out(1)
@@ -254,8 +252,9 @@
 
               write (*,1236) ob(iob)%name, ob(iob_ch)%name, polldb(ipoll)%name, poll_om(irec, ipoll)%load
               1236 format ("Found:", 2x, a, 2x, "to", 2x, a, 2x, a, 2x, F4.1)
-
-              obcs(iob)%hd(1)%poll(ipoll) = poll_om(irec, ipoll)%load * 1000000 ! mg = kg / 1000000
+              
+              ! Podria ser obcs(iob_ch) enlloc de obcs(iob) ????
+              obcs(iob)%hd(1)%poll(ipoll) = poll_om(irec, ipoll)%load * 1000000 ! mg = kg * 1000000
 
               !!obcs(iob)%hin%poll(ipoll) = poll_om(irec, ipoll)%load / 1000000 ! mg = kg / 1000000
               
@@ -266,17 +265,8 @@
               ch_benthic(icha)%poll(ipoll) = 0
               !! calculate mixing velocity using molecular weight and porosity
               sd_ch(icha)%aq_mix_poll(ipoll) = polldb(ipoll)%mol_wt ** (-.6666) * (1. - sd_ch(icha)%ch_bd / 2.65) * (69.35 / 365)
-            else
-              !ToDo: Set pollutants on reservoir
-              if(ob(iob)%obtyp_out(1) == 'res') then
-                print * , "HOLA RESERVORI   -----------------------------------------------------", ob(iob)%name
-
-              end if
-              
             end if
-
-
-          end if
+          end if 
           
         end do
       end do

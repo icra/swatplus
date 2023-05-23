@@ -86,6 +86,7 @@
       wbody%nh3 = amax1 (wbody%nh3, 0.0)
       wbody%no2 = amax1 (wbody%no2, 0.0)
 
+      
       !! calculate amount of nutrients leaving reservoir
       ht2%no3 = wbody%no3 * ht2%flo / (wbody%flo + ht2%flo)
       ht2%orgn = wbody%orgn * ht2%flo / (wbody%flo + ht2%flo)
@@ -94,6 +95,7 @@
       ht2%chla = wbody%chla * ht2%flo / (wbody%flo + ht2%flo)
       ht2%nh3 = wbody%nh3 * ht2%flo / (wbody%flo + ht2%flo)
       ht2%no2 = wbody%no2 * ht2%flo / (wbody%flo + ht2%flo)
+
 
       return
       end subroutine res_nutrient

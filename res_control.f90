@@ -8,6 +8,7 @@
       use hydrograph_module
       use conditional_module
       use water_body_module
+      use constituent_mass_module
       
       implicit none
 
@@ -21,6 +22,8 @@
       integer :: iob                  !none          |counter
       real :: pvol_m3
       real :: evol_m3
+
+
 
       iob = res_ob(jres)%ob
       iwst = ob(iob)%wst
@@ -36,6 +39,10 @@
       
       ht1 = ob(icmd)%hin    !! set incoming flow
       ht2 = resz            !! zero outgoing flow
+
+      ! ICRA
+      hcs1 = obcs(icmd)%hin
+      hcs2 = hin_csz
 
       !! add incoming flow to reservoir
       res(jres) = res(jres) + ht1
@@ -105,11 +112,26 @@
         inut = res_dat(idat)%nut
         call res_nutrient (jres, inut, iob)
 
+        !! subtract nutrient leaving from reservoir
+        res(jres)%no3 = res(jres)%no3 - ht2%no3
+        res(jres)%orgn = res(jres)%orgn - ht2%orgn
+        res(jres)%sedp = res(jres)%sedp - ht2%sedp
+        res(jres)%solp = res(jres)%solp - ht2%solp
+        res(jres)%chla = res(jres)%chla - ht2%chla
+        res(jres)%nh3 = res(jres)%nh3 - ht2%nh3
+        res(jres)%no2 = res(jres)%no2 - ht2%no2
+
         !! perform reservoir pesticide transformations
         call res_pest (jres)
 
+        !! ICRA perform reservoir pollutants transformations
+        call res_poll (jres)
+
+
         !! set values for outflow variables
         ob(icmd)%hd(1) = ht2
+        obcs(icmd)%hd(1) = hcs2 !ICRA
+
 
         if (time%step > 0) then
           do ii = 1, time%step
@@ -131,6 +153,8 @@
       else
         !! reservoir has not been constructed yet
         ob(icmd)%hd(1) = ob(icmd)%hin
+        obcs(icmd)%hd(1) = obcs(icmd)%hin !ICRA
+
       end if
 
       return

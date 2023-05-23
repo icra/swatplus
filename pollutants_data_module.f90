@@ -22,7 +22,10 @@
         integer :: num              !! sequential pollutant number in simulation
         real :: aq_fr               !! 0-1                  |fraction of parent aquatic degrading to daughter
         real :: ben_fr              !! 0-1                  |fraction of parent benthic degrading to daughter
-      end type daughter_decay_fractions
+        !real :: foliar_fr          !! 0-1                  |fraction of parent foilar degrading to daughter
+        real :: soil_fr             !! 0-1                  |fraction of parent soil degrading to daughter
+
+        end type daughter_decay_fractions
       
       type pollutant_cp         !! calculated parameters from input parms
         integer :: num_metab = 0          !! number of metabolites

@@ -8,6 +8,15 @@
       real :: reactb                  !mg pst        |amount of pesticide in sediment that is lost through reactions
       real :: bury                    !mg pst        |loss of pesticide from active sediment layer by burial
 
+      !ICRA
+      real :: volatpoll               !mg poll       |amount of pollutant lost from reach by volatilization
+      real :: setlpoll                !mg poll       |amount of pollutant moving from water to sediment due to settling
+      real :: resuspoll               !mg poll       |amount of pollutant moving from sediment to reach due to resuspension
+      real :: difus_poll              !mg poll       |diffusion of pollutant from sediment to reach
+      real :: bury_poll               !mg poll       |loss of pollutant from active sediment layer by burial
+
+
+
       type reservoir
         character(len=13) :: name = "default"
         integer :: ob = 0                           !object number if reservoir object; hru number if hru object
@@ -23,6 +32,8 @@
         real :: seci = 0                    !m      !seci depth
         real, dimension (:), allocatable :: kd      !           |aquatic mixing velocity (diffusion/dispersion)-using mol_wt
         real, dimension (:), allocatable :: aq_mix  ! m/day     |aquatic mixing velocity (diffusion/dispersion)-using mol_wt
+        real, dimension (:), allocatable :: aq_mix_poll  ! ICRA m/day     |aquatic mixing velocity (diffusion/dispersion)-using mol_wt
+
       end type reservoir          
       type (reservoir), dimension(:),allocatable :: res_ob
       

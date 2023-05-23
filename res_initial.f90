@@ -7,6 +7,10 @@
       use constituent_mass_module
       use pesticide_data_module
       use water_body_module
+
+      use pollutant_module
+      use pollutants_data_module
+
       
       implicit none
       
@@ -23,6 +27,13 @@
       integer :: ipath       !              |
       integer :: isalt       !              |
       integer :: ipest_db    !none      |counter
+      
+      integer :: num_poll     !ICRA      |counter
+      integer :: ipoll        !ICRA counter
+      integer :: irec         !ICRA counter
+      integer :: iob          !ICRA counter
+      integer :: iob_res      !ICRA counter
+
 
       do ires = 1, sp_ob%res
         !! set initial volumes for res and hru types
@@ -82,6 +93,7 @@
           ised = res_dat(idat)%sed
           res_ob(ires)%aq_mix(ipest) = pestdb(ipest_db)%mol_wt * (1. - res_sed(ised)%bd / 2.65)
         end do
+
                   
         !! initialize pathogens in reservoir water and benthic from input data
         init = res_init(i)%path
@@ -102,6 +114,43 @@
 
       end do
       close(105)
+
+      !! TODO: ICRA Inicialitzar dades de pollutants a dins el reservori si un punt hi aboca directament
+      !! cal replicar la funció de init dels pesticides
+      num_poll = cs_db%num_poll
+
+      write (*,1234) "Start loading of pollutants: ", num_poll
+      1234 format (1x, a, 2x, I4)
+
+      do irec = 1, sp_ob%exco
+        iob = sp_ob1%exco + irec - 1
+
+        do ipoll = 1, num_poll
+          if (poll_om(irec, ipoll)%load > 0) then
+            if(ob(iob)%obtyp_out(1) == 'res') then
+
+              ires = ob(iob)%obtypno_out(1)
+              iob_res =  sp_ob1%res + ires - 1
+
+              ! Podria ser obcs(iob_res) enlloc de obcs(iob) ????
+              obcs(iob)%hd(1)%poll(ipoll) = poll_om(irec, ipoll)%load * 1000000 ! mg = kg / 1000000
+              
+              res_benthic(ires)%poll(ipoll) = 0
+              !! calculate mixing velocity using molecular weight and porosity
+              ised = res_dat(idat)%sed
+              res_ob(ires)%aq_mix_poll(ipoll) = polldb(ipoll)%mol_wt * (1. - res_sed(ised)%bd / 2.65)
+    
+
+              !write (*,1236) ob(iob)%name, ob(iob_ch)%name, polldb(ipoll)%name, poll_om(irec, ipoll)%load
+              !1236 format ("Found:", 2x, a, 2x, "to", 2x, a, 2x, a, 2x, F4.1)
+
+            end if
+          end if 
+          
+        end do
+      end do
+
+
 
       return
       end subroutine res_initial

@@ -169,14 +169,6 @@
               ob(icmd)%hdsep_in%flo_satexsw = ob(icmd)%hdsep_in%flo_satexsw + hdsep1%flo_satexsw
               ob(icmd)%hdsep_in%flo_tile = ob(icmd)%hdsep_in%flo_tile + hdsep1%flo_tile
               
-              !prova
-              if (ob(icmd)%name == 'cha05') then
-                !write(*,*) ob(icmd)%hin%cbod
-                !write(*,*) obcs(iob)%hd(ihyd)%poll
-                !write(*,*) 'pollutant', obcs(iob)%hd(ihyd)%pest(1)
-
-                !exemple de obcs(iob)%hd(1)%pest al fitxer exco_read_pest
-              end if
 
               ! fraction of constituents
               if (cs_db%num_tot > 0) then
