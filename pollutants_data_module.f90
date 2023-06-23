@@ -4,6 +4,7 @@
           
       type pollutants_db
         character(len=16) :: name   !!                      |pollutant name
+        real :: koc = 0.            !! (mL/g)               |soil adsorption coeff normalized for soil org carbon content
         real :: solub = 0.          !! mg/L (ppm)           |solubility of chemical in water
         real :: aq_hlife = 0.       !! days                 |aquatic half-life
         real :: aq_volat = 0.       !! m/day                |aquatic volatilization coeff

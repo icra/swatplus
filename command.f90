@@ -401,7 +401,7 @@
           wro(iwro)%demand = irrig(ob_num)%demand + wro(iwro)%demand   
         end do
       end do
-    
+      
       !! print all output files
       if (time%yrs > pco%nyskip) then  ! .and. time%step == 0) then
         call obj_output
@@ -446,7 +446,8 @@
           call sd_chanmorph_output (jrch)
           call sd_channel_output (jrch)
           if (cs_db%num_tot > 0) then 
-            call cha_pesticide_output (jrch)   
+            call cha_pesticide_output (jrch)  
+            call cha_pollutant_output (jrch)  !ICRA
             !call ch_pathogen_output (jrch)
           end if         
         end do
@@ -455,6 +456,7 @@
           call reservoir_output(j)
          if (cs_db%num_tot > 0) then 
             call res_pesticide_output (j)
+            call res_pollutant_output (j) !ICRA
             !call res_pathogen_output (j)
           end if       
         end do 

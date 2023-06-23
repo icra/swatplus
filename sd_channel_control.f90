@@ -12,6 +12,7 @@
       use climate_module
       use water_body_module
       use time_module
+      use ch_pollutant_module !ICRA
     
       implicit none     
     
@@ -99,7 +100,8 @@
 
       real :: channel_storage         !rtb gwflow
       real :: rchvol
-      
+      integer :: ipoll                !ICRA           
+
       ich = isdch
       isd_db = sd_dat(ich)%hyd
       iwst = ob(icmd)%wst
@@ -193,6 +195,7 @@
             
             sd_ch(ich)%overbank = "ob"
             rcharea = sd_ch_vel(ich)%area
+
             rchdep = sd_ch(ich)%chd
             !calculate hydraulic radius at hydrograph time increments for degredation
             flo_rt = 0.
@@ -202,9 +205,10 @@
             tbase = 1.5 * 3600.     !sd_chd(isd_db)%tc * 60.   !hydrograph base time in s
             tb_pr = tbase
             DO WHILE (flo_rt < peakrate)
+
               rchdep = rchdep + 0.01
               rcharea = (sd_ch_vel(ich)%wid_btm + chside * rchdep) * rchdep
-              p = sd_ch_vel(ich)%wid_btm + 2. * rchdep * Sqrt (1. + chside *chside)
+              p = sd_ch_vel(ich)%wid_btm + 2. * rchdep * Sqrt (1. + chside * chside)
               rh = rcharea / p
               flo_rt = Qman(rcharea, rh, sd_ch(ich)%chn, sd_ch(ich)%chs)
               !need to save hydraulic radius and time for each flow interval for downcutting and widening
@@ -217,6 +221,7 @@
                 valint = float (ivalint) / float (maxint)
               end if
             END DO
+
             
             !! estimate overbank flow - assume a triangular hyd
             tbase = 1.5 * 3600.     !sd_chd(isd_db)%tc * 60.  !seconds
@@ -320,8 +325,11 @@
             ivalint = 1
             tbase = 1.5 * 3600.     !sd_chd(isd_db)%tc * 60.   !hydrograph base time in s
             tb_pr = tbase
+
             DO WHILE (flo_rt < peakrate)
+
               rchdep = rchdep + 0.01
+
               rcharea = (sd_ch_vel(ich)%wid_btm + chside * rchdep) * rchdep
               p = sd_ch_vel(ich)%wid_btm + 2. * rchdep*Sqrt(1. + chside * chside)
               rh = rcharea / p
@@ -338,6 +346,8 @@
                 valint = float (ivalint) / float(maxint)
               end if
             END DO
+
+
             timeint = timeint / sumtime
           END IF
 
@@ -448,9 +458,16 @@
       jrch = ich
       vc = 0.001
       if (rcharea > 1.e-4 .and. ht1%flo > 1.e-4) then
+
         vc = peakrate / rcharea
+
+
         !if (vc > sd_ch_vel(ich)%celerity_bf) vc = sd_ch_vel(ich)%celerity_bf
-        rttime = sd_ch(jhyd)%chl * 1000. / (3600. * vc)
+
+        !rttime = sd_ch(jhyd)%chl * 1000. / (3600. * vc)
+        rttime = sd_ch(ich)%chl * 1000. / (3600. * vc)  !ICRA 
+
+
         if (time%step == 0) rt_delt = 1.
         !if (bsn_cc%wq == 1) then
           !! use modified qual-2e routines
@@ -545,6 +562,7 @@
         hcs2 = hcs2 + ch_water(ich)
         ch_water(ich) = frac * hcs1
       !end if
+
       
       !rtb hydrograph separation
       if (rttime > det) then      ! ht1 = incoming + storage
@@ -672,6 +690,25 @@
         chpst_d(isdch)%pest(ipest)%water = ch_water(ich)%pest(ipest)
         chpst_d(isdch)%pest(ipest)%benthic = ch_benthic(ich)%pest(ipest)
       end do
+
+      !! ICRA set pollutant output variables
+      do ipoll = 1, cs_db%num_poll
+        chpoll_d(isdch)%poll(ipoll)%tot_in = obcs(icmd)%hin%poll(ipoll)
+        chpoll_d(isdch)%poll(ipoll)%sol_out = poll_frsol * obcs(icmd)%hd(1)%poll(ipoll)
+        chpoll_d(isdch)%poll(ipoll)%sor_out = poll_frsrb * obcs(icmd)%hd(1)%poll(ipoll)
+        chpoll_d(isdch)%poll(ipoll)%react = chpoll%poll(ipoll)%react
+        chpoll_d(isdch)%poll(ipoll)%volat = chpoll%poll(ipoll)%volat
+        chpoll_d(isdch)%poll(ipoll)%settle = chpoll%poll(ipoll)%settle
+        chpoll_d(isdch)%poll(ipoll)%resus = chpoll%poll(ipoll)%resus
+        chpoll_d(isdch)%poll(ipoll)%difus = chpoll%poll(ipoll)%difus
+        chpoll_d(isdch)%poll(ipoll)%react_bot = chpoll%poll(ipoll)%react_bot
+        chpoll_d(isdch)%poll(ipoll)%bury = chpoll%poll(ipoll)%bury 
+        chpoll_d(isdch)%poll(ipoll)%water = ch_water(ich)%poll(ipoll)
+        chpoll_d(isdch)%poll(ipoll)%benthic = ch_benthic(ich)%poll(ipoll)
+
+
+      end do
+
 
         
       !! set values for recharge hydrograph - should be trans losses

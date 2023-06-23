@@ -227,7 +227,9 @@
         type(print_interval) :: ru
         type(print_interval) :: pest            !!  all constituents pesticide output files (hru, chan, res, basin_chan, basin_res,
                                                 !!        basin_ls
-      end type basin_print_codes
+        type(print_interval) :: poll            !!  ICRA all constituents pesticide output files (chan, res)
+
+        end type basin_print_codes
       type (basin_print_codes) :: pco
       type (basin_print_codes) :: pco_init
       

@@ -42,6 +42,9 @@
       integer :: jsed               !none          |counter
       integer :: idb                !none          |
 
+      real :: tpoll1_b              !none          |ICRA aux
+      real :: tpoll2_b              !none          |ICRA aux
+
       
       
       if (res(jres)%flo > 1.) then
@@ -59,11 +62,12 @@
         !tpoll1 = obcs(icmd)%hin%poll(ipoll) + res_water(jres)%poll(ipoll)
         tpoll1 = obcs(icmd)%hin%poll(ipoll) + res_water(jres)%poll(ipoll) * res(jres)%flo    !ICRA  
 
+
         bedvol = 1000. * res_wat_d(jres)%area_ha * polldb(ipoll)%ben_act_dep + .01
         tpoll2 = res_benthic(jres)%poll(ipoll) * bedvol
 
-        write (*,*) ob(icmd)%name, polldb(ipoll)%name, tpoll1, tpoll2
-
+        tpoll1_b = tpoll1
+        tpoll2_b = tpoll2
 
         !! calculate average depth of reservoir
         depth = res(jres)%flo / (res_wat_d(jres)%area_ha * 10000.)
@@ -71,8 +75,12 @@
         !! -> sor mass/sol mass = Kd * (kg sed)/(L water) --> sol mass/tot mass = 1 / (1 + Kd * (kg sed)/(L water))
         !! water column --> kg sed/L water = t/m3 = t / (m3 - (t * m3/t)) --> sedvol = sed/particle density(2.65)
         sedmass_watervol = (res(jres)%sed) / (res(jres)%flo - (res(jres)%sed / 2.65))
-        !kd = polldb(ipoll)%koc * res_sed(jsed)%carbon / 100.
-        kd = 0.5  ! PROVA ICRA
+        kd = polldb(ipoll)%koc * res_sed(jsed)%carbon / 100.
+
+
+        !print *, 'kd = ', kd, 'koc = ', polldb(ipoll)%koc, 'carbon = ', res_sed(jsed)%carbon
+
+        !kd = 0.5  ! PROVA ICRA
         fd1 = 1. / (1. + kd * sedmass_watervol)
         fd1 = amin1 (1., fd1)
         fp1 = 1. - fd1
@@ -206,6 +214,9 @@
         end if
         respoll_d(jres)%poll(ipoll)%sol_out = solpoll
         respoll_d(jres)%poll(ipoll)%sor_out = sorpoll
+
+        
+        write (*,*) ob(icmd)%name, polldb(ipoll)%name, tpoll1_b, tpoll1, sorpoll + solpoll
 
 
         !! update concentration of pollutant in lake water and sediment

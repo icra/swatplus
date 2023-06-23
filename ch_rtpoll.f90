@@ -54,8 +54,8 @@
 !!    chpollmass   |mg poll        |mass of pollutant in reach
 !!    depth       |m             |depth of water in reach
 !!    fd2         |
-!!    frsol       |none          |fraction of pollutant in reach that is soluble
-!!    frsrb       |none          |fraction of pollutant in reach that is sorbed
+!!    poll_frsol       |none          |fraction of pollutant in reach that is soluble
+!!    poll_frsrb       |none          |fraction of pollutant in reach that is sorbed
 !!    jrch        |none          |reach number
 !!    pollin       |mg poll        |total pollutant transported into reach
 !!                               |during time step
@@ -107,6 +107,10 @@
       real :: poll_init         !mg            |amount of pollutant before decay
       real :: poll_end          !mg            |amount of pollutant after decay
 
+      real :: chpollmass_b         !mg poll        |mass of pollutant in reach
+      real :: sedpollmass_b        !mg poll        |mass of pollutant in bed sediment
+
+
       !! zero outputs
       chpoll_d(jrch) = chpollz
       num_poll = cs_db%num_poll
@@ -121,9 +125,9 @@
 
 
       !! 1236 format ("Found:", 2x, a)
-      if (jrch == 46 .or. jrch == 38 .or. jrch == 7) then
-        write (*,*) ob((sp_ob1%chandeg) + jrch - 1)%name, 'cbod', ht1%cbod
-      endif
+      !if (jrch == 46 .or. jrch == 38 .or. jrch == 7) then
+      !  write (*,*) ob((sp_ob1%chandeg) + jrch - 1)%name, 'cbod', ht1%cbod
+      !endif
       
       do ipoll = 1, num_poll
         jpoll = ipoll
@@ -140,10 +144,8 @@
         !! calculate mass of pollutant in bed sediment
         sedpollmass = ch_benthic(jrch)%poll(ipoll)
 
-        if (jrch == 46 .or. jrch == 38 .or. jrch == 7) then
-          write (*,*) ob((sp_ob1%chandeg) + jrch - 1)%name, polldb(ipoll)%name, chpollmass, sedpollmass
-        endif
-
+        chpollmass_b = chpollmass
+        sedpollmass_b = sedpollmass
 
         if (chpollmass + sedpollmass < 1.e-12) then
 
@@ -161,12 +163,13 @@
           sedcon = ht1%sed / wtrin * 1.e6
           
           !! set kd
-          !kd = polldb(ipoll)%koc * sd_ch(jrch)%carbon / 100.
-          kd = 0.5  ! PROVA ICRA
+          kd = polldb(ipoll)%koc * sd_ch(jrch)%carbon / 100.
+          !print *, 'kd = ', kd, 'koc = ', polldb(ipoll)%koc, 'carbon = ', sd_ch(jrch)%carbon
+          !kd = 0.5  ! PROVA ICRA
 
           !! calculate fraction of soluble and sorbed pollutant
-          frsol = 1. / (1. + kd * sedcon)
-          frsrb = 1. - frsol
+          poll_frsol = 1. / (1. + kd * sedcon)
+          poll_frsrb = 1. - poll_frsol
 
           !! ASSUME DENSITY=2.6E6; KD2=KD1
           !por = 1. - sd_ch(jrch)%ch_bd / 2.65
@@ -195,12 +198,12 @@
           end if
 
           !! calculate amount of pollutant that volatilizes from reach
-          chpoll%poll(ipoll)%volat = polldb(jpoll)%aq_volat * frsol * chpollmass * tday / depth
+          chpoll%poll(ipoll)%volat = polldb(jpoll)%aq_volat * poll_frsol * chpollmass * tday / depth
 
 
 
-          if (chpoll%poll(ipoll)%volat > frsol * chpollmass) then
-            chpoll%poll(ipoll)%volat = frsol * chpollmass 
+          if (chpoll%poll(ipoll)%volat > poll_frsol * chpollmass) then
+            chpoll%poll(ipoll)%volat = poll_frsol * chpollmass 
             chpollmass = chpollmass - chpoll%poll(ipoll)%volat
           else
             chpollmass = chpollmass - chpoll%poll(ipoll)%volat
@@ -208,9 +211,9 @@
 
 
           !! calculate amount of pollutant removed from reach by settling
-          chpoll%poll(ipoll)%settle = polldb(jpoll)%aq_settle * frsrb * chpollmass * tday / depth
-          if (chpoll%poll(ipoll)%settle >  frsrb * chpollmass) then
-            chpoll%poll(ipoll)%settle = frsrb * chpollmass
+          chpoll%poll(ipoll)%settle = polldb(jpoll)%aq_settle * poll_frsrb * chpollmass * tday / depth
+          if (chpoll%poll(ipoll)%settle >  poll_frsrb * chpollmass) then
+            chpoll%poll(ipoll)%settle = poll_frsrb * chpollmass
             chpollmass = chpollmass - chpoll%poll(ipoll)%settle
           else
             chpollmass = chpollmass - chpoll%poll(ipoll)%settle
@@ -264,9 +267,9 @@
 
           !! verify that water concentration is at or below solubility
           solmax = polldb(jpoll)%solub * wtrin
-          if (solmax < chpollmass * frsol) then
-            sedpollmass = sedpollmass + (chpollmass * frsol - solmax)
-            chpollmass = chpollmass - (chpollmass * frsol - solmax)
+          if (solmax < chpollmass * poll_frsol) then
+            sedpollmass = sedpollmass + (chpollmass * poll_frsol - solmax)
+            chpollmass = chpollmass - (chpollmass * poll_frsol - solmax)
           end if
         
         else   
@@ -292,6 +295,10 @@
             ch_benthic(jrch)%poll(ipseq) = ch_benthic(jrch)%poll(ipseq) + chpoll_d(jrch)%poll(ipseq)%metab
           end do
         end if
+
+        !if (jrch == 46 .or. jrch == 38 .or. jrch == 7 .or. jrch == 2) then
+        !  write (*,*) ob((sp_ob1%chandeg) + jrch - 1)%name, polldb(ipoll)%name, chpollmass_b, '---->', chpollmass
+        !endif
 
         !! set new pollutant mass of (in + store) after processes
         if (wtrin > 1.e-6) then

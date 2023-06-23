@@ -6,8 +6,8 @@
       
       implicit none
               
-      real :: frsol             !none          |fraction of pollutant in reach that is soluble
-      real :: frsrb             !none          |fraction of pollutant in reach that is sorbed
+      real :: poll_frsol             !none          |fraction of pollutant in reach that is soluble
+      real :: poll_frsrb             !none          |fraction of pollutant in reach that is sorbed
       
       type ch_pollutant_processes
         real :: tot_in = 0.             ! kg        !total pollutant into reservoir
@@ -50,20 +50,20 @@
           character (len=8) :: id =         " gis_id "           
           character (len=16) :: name =      " name              "  
           character (len=16) :: poll =      " pollutant"
-          character(len=13) :: tot_in =     "tot_in_kg "            ! (kg)
-          character(len=13) :: sol_out =    "sol_out_kg "           ! (kg)
-          character(len=14) :: sor_out =    "sor_out_kg "           ! (kg)
-          character(len=13) :: react =      "react_h2o_kg "         ! (kg)
-          character(len=13) :: metab =      "metab_h2o_kg "         ! (kg)
-          character(len=12) :: volat =      "volat_kg "             ! (kg)
-          character(len=12) :: settle =     "settle_kg "            ! (kg)
-          character(len=13) :: resus =      "resuspend_kg "         ! (kg)
-          character(len=12) :: difus =      "diffuse_kg "           ! (kg)
-          character(len=15) :: react_bot =  "react_benth_kg "       ! (kg)
-          character(len=15) :: metab_bot =  "metab_benth_kg "       ! (kg)
-          character(len=14) :: bury =       "bury_benth_kg "        ! (kg)
-          character(len=14) :: water =      "water_stor_kg "        ! (kg)
-          character(len=12) :: benthic =    "benthic_kg "           ! (kg)
+          character(len=13) :: tot_in =     "tot_in_mg "            ! (mg)
+          character(len=13) :: sol_out =    "sol_out_mg "           ! (mg)
+          character(len=14) :: sor_out =    "sor_out_mg "           ! (mg)
+          character(len=13) :: react =      "react_h2o_mg "         ! (mg)
+          character(len=13) :: metab =      "metab_h2o_mg "         ! (mg)
+          character(len=12) :: volat =      "volat_mg "             ! (mg)
+          character(len=12) :: settle =     "settle_mg "            ! (mg)
+          character(len=13) :: resus =      "resuspend_mg "         ! (mg)
+          character(len=12) :: difus =      "diffuse_mg "           ! (mg)
+          character(len=15) :: react_bot =  "react_benth_mg "       ! (mg)
+          character(len=15) :: metab_bot =  "metab_benth_mg "       ! (mg)
+          character(len=14) :: bury =       "bury_benth_mg "        ! (mg)
+          character(len=14) :: water =      "water_stor_mg "        ! (mg)
+          character(len=12) :: benthic =    "benthic_mg "           ! (mg)
       end type ch_pollutant_header
       type (ch_pollutant_header) :: chpoll_hdr
      

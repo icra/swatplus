@@ -36,6 +36,7 @@
 
       do ipoll = 1, cs_db%num_poll
         cs_db%poll(ipoll) = polldb(ipoll)%name
+
         cs_db%poll_num(ipoll) = ipoll
       end do  
       
