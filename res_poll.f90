@@ -49,9 +49,6 @@
       
       if (res(jres)%flo > 1.) then
 
-
-      write (*,*) ob(icmd)%name, 'cbod', res(jres)%cbod
-
           
       do ipoll = 1, cs_db%num_poll
         icmd = res_ob(jres)%ob
@@ -216,7 +213,7 @@
         respoll_d(jres)%poll(ipoll)%sor_out = sorpoll
 
         
-        write (*,*) ob(icmd)%name, polldb(ipoll)%name, tpoll1_b, tpoll1, sorpoll + solpoll
+        !write (*,*) ob(icmd)%name, polldb(ipoll)%name, tpoll1_b, tpoll1, sorpoll + solpoll
 
 
         !! update concentration of pollutant in lake water and sediment

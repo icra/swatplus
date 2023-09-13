@@ -178,6 +178,7 @@
                       allocate (obcs(i)%hcsout_a(iout)%pest(npests))
                     end if
                     !ICRA
+                    npolls = cs_db%num_poll  !ICRA
                     if (npolls > 0) then 
                       allocate (obcs(i)%hcsout_m(iout)%poll(npolls))
                       allocate (obcs(i)%hcsout_y(iout)%poll(npolls))

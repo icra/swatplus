@@ -464,8 +464,7 @@
 
         !if (vc > sd_ch_vel(ich)%celerity_bf) vc = sd_ch_vel(ich)%celerity_bf
 
-        !rttime = sd_ch(jhyd)%chl * 1000. / (3600. * vc)
-        rttime = sd_ch(ich)%chl * 1000. / (3600. * vc)  !ICRA 
+        rttime = sd_ch(jhyd)%chl * 1000. / (3600. * vc)
 
 
         if (time%step == 0) rt_delt = 1.

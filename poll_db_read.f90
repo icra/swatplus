@@ -14,7 +14,7 @@
 
       ! We do not have an entry of pollutants in "constituents.cs" file, so we simulate
       ! all the pollutants defined in pollutants.def file
-      !These operations could have be done in 'pollutants_parm_read', but we prefer to 
+      !These operations could have been done in 'pollutants_parm_read', but we prefer to 
       !do it here to avoid to modidying the original structure of the code
            
       logical :: i_exist              !none       |check to determine if file exists

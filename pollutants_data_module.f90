@@ -1,10 +1,10 @@
+      !ICRA      
       module pollutants_data_module
     
       implicit none    
           
       type pollutants_db
         character(len=16) :: name   !!                      |pollutant name
-        real :: koc = 0.            !! (mL/g)               |soil adsorption coeff normalized for soil org carbon content
         real :: solub = 0.          !! mg/L (ppm)           |solubility of chemical in water
         real :: aq_hlife = 0.       !! days                 |aquatic half-life
         real :: aq_volat = 0.       !! m/day                |aquatic volatilization coeff
@@ -14,6 +14,7 @@
         real :: ben_act_dep = 0.    !! m                    |depth of active benthic layer
         real :: ben_bury = 0.       !! m/day                |burial velocity in benthic sediment
         real :: ben_hlife = 0.      !! days                 |half-life of pest in benthic sediment
+        real :: koc = 0.            !! (mL/g)               |soil adsorption coeff normalized for soil org carbon content
         character(len=32) :: descrip                        !pollutant description
       end type pollutants_db
       type (pollutants_db), dimension(:), allocatable, save :: polldb
