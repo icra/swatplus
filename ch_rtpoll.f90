@@ -154,8 +154,10 @@
 
         end if
 
-        if (chpollmass + sedpollmass < 1.e-12) return
-
+        if (chpollmass + sedpollmass < 1.e-12) then
+          !!return
+          cycle !ICRA return will exit the subroutine directly, i want to skip the current pollutant instead
+        end if 
 
         !!in-stream processes
         if (wtrin / 86400. > 1.e-9) then
@@ -172,8 +174,8 @@
           poll_frsrb = 1. - poll_frsol
 
           !! ASSUME DENSITY=2.6E6; KD2=KD1
-          !por = 1. - sd_ch(jrch)%ch_bd / 2.65
-          !fd2 = 1. / (por + kd)
+          por = 1. - sd_ch(jrch)%ch_bd / 2.65
+          fd2 = 1. / (por + kd)
 
           !! calculate flow duration
           tday = rttime / 24.0
@@ -183,7 +185,9 @@
           !! calculate amount of pollutant that undergoes chemical or biological degradation on day in reach
           poll_init = chpollmass
           if (poll_init > 1.e-12) then
-            poll_end = chpollmass * pollcp(ipoll)%decay_a
+            !poll_end = chpollmass * pollcp(ipoll)%decay_a
+            poll_end = chpollmass * Exp(tday * (-.693 / polldb(jpoll)%aq_hlife)) ! ICRA
+
             chpollmass = poll_end
             chpoll%poll(ipoll)%react = poll_init - poll_end
             !! add decay to daughter pollutants
@@ -199,7 +203,6 @@
 
           !! calculate amount of pollutant that volatilizes from reach
           chpoll%poll(ipoll)%volat = polldb(jpoll)%aq_volat * poll_frsol * chpollmass * tday / depth
-
 
 
           if (chpoll%poll(ipoll)%volat > poll_frsol * chpollmass) then
@@ -230,29 +233,27 @@
             sedpollmass = sedpollmass - chpoll%poll(ipoll)%resus
           end if
           
-
-
           chpollmass = chpollmass + chpoll%poll(ipoll)%resus
 
           !! calculate diffusion of pollutant between reach and sediment
-          !chpoll%poll(ipoll)%difus = sd_ch(jrch)%aq_mix_poll(ipoll) * (fd2 * sedpollmass - frsol * chpollmass) * tday / depth
-          !if (chpoll%poll(ipoll)%difus > 0.) then
-          !  if (chpoll%poll(ipoll)%difus > sedpollmass) then
-          !    chpoll%poll(ipoll)%difus = sedpollmass
-          !    sedpollmass = 0.
-          !  else
-          !    sedpollmass = sedpollmass - Abs(chpoll%poll(ipoll)%difus)
-          !  end if
-          !  chpollmass = chpollmass + Abs(chpoll%poll(ipoll)%difus)
-          !else
-          !  if (Abs(chpoll%poll(ipoll)%difus) > chpollmass) then
-          !    chpoll%poll(ipoll)%difus = -chpollmass
-          !    chpollmass = 0.
-          !  else
-          !    chpollmass = chpollmass - Abs(chpoll%poll(ipoll)%difus)
-          !  end if
-          !  sedpollmass = sedpollmass + Abs(chpoll%poll(ipoll)%difus)
-          !end if
+          chpoll%poll(ipoll)%difus = sd_ch(jrch)%aq_mix_poll(ipoll) * (fd2 * sedpollmass - frsol * chpollmass) * tday / depth
+          if (chpoll%poll(ipoll)%difus > 0.) then
+            if (chpoll%poll(ipoll)%difus > sedpollmass) then
+              chpoll%poll(ipoll)%difus = sedpollmass
+              sedpollmass = 0.
+            else
+              sedpollmass = sedpollmass - Abs(chpoll%poll(ipoll)%difus)
+            end if
+            chpollmass = chpollmass + Abs(chpoll%poll(ipoll)%difus)
+          else
+            if (Abs(chpoll%poll(ipoll)%difus) > chpollmass) then
+              chpoll%poll(ipoll)%difus = -chpollmass
+              chpollmass = 0.
+            else
+              chpollmass = chpollmass - Abs(chpoll%poll(ipoll)%difus)
+            end if
+            sedpollmass = sedpollmass + Abs(chpoll%poll(ipoll)%difus)
+          end if
 
           !! calculate removal of pollutant from active sediment layer by burial
           chpoll%poll(ipoll)%bury = polldb(jpoll)%ben_bury * sedpollmass / polldb(jpoll)%ben_act_dep
@@ -282,7 +283,9 @@
         !! calculate loss of pollutant from bed sediments by reaction
         poll_init = sedpollmass
         if (poll_init > 1.e-12) then
-          poll_end = sedpollmass * pollcp(jpoll)%decay_b
+          !poll_end = sedpollmass * pollcp(jpoll)%decay_b
+          poll_end = sedpollmass * Exp(tday * (-.693 / polldb(jpoll)%ben_hlife)) ! ICRA
+
           sedpollmass = poll_end
           chpoll%poll(ipoll)%react_bot = poll_init - poll_end
           !! add decay to daughter pollicides
@@ -307,6 +310,10 @@
           sedpollmass = sedpollmass + chpollmass
         end if
         ch_benthic(jrch)%poll(ipoll) = sedpollmass
+
+        if (hcs1%poll(ipoll) > 0) then
+          write (*,*) ob((sp_ob1%chandeg) + jrch - 1)%name, ipoll, hcs1%poll(ipoll)
+        end if
 
       end do
 

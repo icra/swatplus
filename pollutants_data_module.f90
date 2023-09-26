@@ -13,7 +13,7 @@
         real :: aq_settle = 0.      !! m/day                |aquatic settling velocity for pollutant sorbed to sediment
         real :: ben_act_dep = 0.    !! m                    |depth of active benthic layer
         real :: ben_bury = 0.       !! m/day                |burial velocity in benthic sediment
-        real :: ben_hlife = 0.      !! days                 |half-life of pest in benthic sediment
+        real :: ben_hlife = 0.      !! days                 |half-life of poll in benthic sediment
         real :: koc = 0.            !! (mL/g)               |soil adsorption coeff normalized for soil org carbon content
         character(len=32) :: descrip                        !pollutant description
       end type pollutants_db
