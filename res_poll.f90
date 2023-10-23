@@ -72,12 +72,10 @@
         !! -> sor mass/sol mass = Kd * (kg sed)/(L water) --> sol mass/tot mass = 1 / (1 + Kd * (kg sed)/(L water))
         !! water column --> kg sed/L water = t/m3 = t / (m3 - (t * m3/t)) --> sedvol = sed/particle density(2.65)
         sedmass_watervol = (res(jres)%sed) / (res(jres)%flo - (res(jres)%sed / 2.65))
-        kd = polldb(ipoll)%koc * res_sed(jsed)%carbon / 100.
+        
+        !kd = polldb(ipoll)%koc * res_sed(jsed)%carbon / 100.
+        kd = polldb(ipoll)%kow * 3.085e-8    !ICRA
 
-
-        !print *, 'kd = ', kd, 'koc = ', polldb(ipoll)%koc, 'carbon = ', res_sed(jsed)%carbon
-
-        !kd = 0.5  ! PROVA ICRA
         fd1 = 1. / (1. + kd * sedmass_watervol)
         fd1 = amin1 (1., fd1)
         fp1 = 1. - fd1
@@ -96,6 +94,7 @@
         poll_init = tpoll1
         if (poll_init > 1.e-12) then
           poll_end = tpoll1 * pollcp(ipoll)%decay_a
+
           tpoll1 = poll_end
           respoll_d(jres)%poll(ipoll)%react = poll_init - poll_end
           !! add decay to daughter pollutants

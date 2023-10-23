@@ -156,7 +156,7 @@
 
         if (chpollmass + sedpollmass < 1.e-12) then
           !!return
-          cycle !ICRA return will exit the subroutine directly, i want to skip the current pollutant instead
+          cycle !ICRA return will exit the subroutine directly, we want to skip the current pollutant instead
         end if 
 
         !!in-stream processes
@@ -165,9 +165,8 @@
           sedcon = ht1%sed / wtrin * 1.e6
           
           !! set kd
-          kd = polldb(ipoll)%koc * sd_ch(jrch)%carbon / 100.
-          !print *, 'kd = ', kd, 'koc = ', polldb(ipoll)%koc, 'carbon = ', sd_ch(jrch)%carbon
-          !kd = 0.5  ! PROVA ICRA
+          !kd = polldb(ipoll)%koc * sd_ch(jrch)%carbon / 100.
+          kd = polldb(ipoll)%kow * 3.085e-8    !ICRA
 
           !! calculate fraction of soluble and sorbed pollutant
           poll_frsol = 1. / (1. + kd * sedcon)
@@ -180,13 +179,14 @@
           !! calculate flow duration
           tday = rttime / 24.0
           if (tday > 1.0) tday = 1.0
-          tday = 1.0
+          !tday = 1.0 !ICRA commented line
 
           !! calculate amount of pollutant that undergoes chemical or biological degradation on day in reach
           poll_init = chpollmass
           if (poll_init > 1.e-12) then
             !poll_end = chpollmass * pollcp(ipoll)%decay_a
             poll_end = chpollmass * Exp(tday * (-.693 / polldb(jpoll)%aq_hlife)) ! ICRA
+            poll_end = Max(0., poll_end) ! ICRA
 
             chpollmass = poll_end
             chpoll%poll(ipoll)%react = poll_init - poll_end
@@ -236,7 +236,7 @@
           chpollmass = chpollmass + chpoll%poll(ipoll)%resus
 
           !! calculate diffusion of pollutant between reach and sediment
-          chpoll%poll(ipoll)%difus = sd_ch(jrch)%aq_mix_poll(ipoll) * (fd2 * sedpollmass - frsol * chpollmass) * tday / depth
+          chpoll%poll(ipoll)%difus = sd_ch(jrch)%aq_mix_poll(ipoll) * (fd2 * sedpollmass - poll_frsol * chpollmass) * tday / depth
           if (chpoll%poll(ipoll)%difus > 0.) then
             if (chpoll%poll(ipoll)%difus > sedpollmass) then
               chpoll%poll(ipoll)%difus = sedpollmass
@@ -311,9 +311,6 @@
         end if
         ch_benthic(jrch)%poll(ipoll) = sedpollmass
 
-        if (hcs1%poll(ipoll) > 0) then
-          write (*,*) ob((sp_ob1%chandeg) + jrch - 1)%name, ipoll, hcs1%poll(ipoll)
-        end if
 
       end do
 
