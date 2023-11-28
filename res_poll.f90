@@ -218,12 +218,12 @@
         !! update concentration of pollutant in lake water and sediment
         if (tpoll1 < 1.e-10) tpoll1 = 0.0
         if (tpoll2 < 1.e-10) tpoll2 = 0.0
+        
         res_water(jres)%poll(ipoll) = tpoll1 / res(jres)%flo
         res_benthic(jres)%poll(ipoll) = tpoll2 / bedvol
 
-        
         !ICRA calculate amount of pollutants leaving reservoir
-        hcs2%poll(ipoll) = ht2%flo * tpoll1 / res(jres)%flo
+        hcs2%poll(ipoll) = sorpoll + solpoll
 
 
 

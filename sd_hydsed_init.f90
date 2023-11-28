@@ -256,11 +256,6 @@
               ! Podria ser obcs(iob_ch) enlloc de obcs(iob) ????
               obcs(iob)%hd(1)%poll(ipoll) = poll_om(irec, ipoll)%load * 1000000 ! mg = kg * 1000000
 
-              !!obcs(iob)%hin%poll(ipoll) = poll_om(irec, ipoll)%load / 1000000 ! mg = kg / 1000000
-              
-              !! In this case we add directly the load from the db. The load are in kg 
-              !ch_water(icha)%poll(ipoll) = poll_om(irec, ipoll)%load / 1000000 ! mg = kg / 1000000
-              !ch_water(icha)%poll(ipoll) = 0
               !! calculate volume of active river bed sediment layer - m3
               ch_benthic(icha)%poll(ipoll) = 0
               !! calculate mixing velocity using molecular weight and porosity
