@@ -14,8 +14,8 @@
       type (poll_output), dimension(:), allocatable :: exco        !export coefficient
       character(len=16), dimension(:), allocatable :: recall_rec
       character(len=16), dimension(:), allocatable :: pollutant_pth
-      integer, dimension(:), allocatable :: poll_om_num
-      type (poll_output), dimension(:, :), allocatable :: poll_om
+      integer, dimension(:), allocatable :: exco_poll_num
+      type (poll_output), dimension(:, :), allocatable :: exco_poll
 
     
               

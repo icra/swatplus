@@ -23,8 +23,8 @@
         integer :: tillparm = 0       !! none     |number of total tillages in tillage.til
         integer :: pestparm = 0       !! none     !number of total pesticides in pesticide.pes
         integer :: pestcom = 0        !! none     !number of total pesticides communities in pesticide.com
-        integer :: pollparm = 0       !! none     !number of total pollutants in pollutants.poll
-        integer :: poll_om = 0        !! none     !number of total entries in pollutants_om.exc
+        integer :: pollparm = 0       !! none     !number of total pollutants in pollutants.poll ICRA
+        integer :: exco_poll = 0      !! none     !number of total entries in exco_poll.exc  ICRA
         integer :: plantcom = 0       !! none     |number of plant communities
         integer :: soiltest = 0       !! none     |number of soiltest 
         integer :: sno = 0            !! none     |number of snow props

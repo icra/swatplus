@@ -74,11 +74,6 @@
         iexco_om = exco_om_num(iexco)
         ob(iob)%hd(1) = exco(iexco_om)
 
-        if (ob(iob)%name == 'pt011') then
-          print *, 'pt011', ob(iob)%hd(1)%cbod
-        end if
-  
-
       end do
       
       

@@ -190,15 +190,17 @@
 
             chpollmass = poll_end
             chpoll%poll(ipoll)%react = poll_init - poll_end
+
+            !ICRA commented lines
             !! add decay to daughter pollutants
-            do imeta = 1, pollcp(ipoll)%num_metab
-              ipseq = pollcp(ipoll)%daughter(imeta)%num
-              ipdb = ipseq
-              mol_wt_rto = polldb(ipdb)%mol_wt / polldb(ipoll)%mol_wt
-              chpoll_d(jrch)%poll(ipseq)%metab = chpoll_d(jrch)%poll(ipseq)%metab + chpoll%poll(ipoll)%react *     &
-                                           pollcp(ipoll)%daughter(imeta)%aq_fr * mol_wt_rto
-              hcs1%poll(ipseq) = hcs1%poll(ipseq) + chpoll_d(jrch)%poll(ipseq)%metab
-            end do
+            !do imeta = 1, pollcp(ipoll)%num_metab
+            !  ipseq = pollcp(ipoll)%daughter(imeta)%num
+            !  ipdb = ipseq
+            !  mol_wt_rto = polldb(ipdb)%mol_wt / polldb(ipoll)%mol_wt
+            !  chpoll_d(jrch)%poll(ipseq)%metab = chpoll_d(jrch)%poll(ipseq)%metab + chpoll%poll(ipoll)%react *     &
+            !                               pollcp(ipoll)%daughter(imeta)%aq_fr * mol_wt_rto
+            !  hcs1%poll(ipseq) = hcs1%poll(ipseq) + chpoll_d(jrch)%poll(ipseq)%metab
+            !end do
           end if
 
           !! calculate amount of pollutant that volatilizes from reach
@@ -288,15 +290,17 @@
 
           sedpollmass = poll_end
           chpoll%poll(ipoll)%react_bot = poll_init - poll_end
-          !! add decay to daughter pollicides
-          do imeta = 1, pollcp(jpoll)%num_metab
-            ipseq = pollcp(jpoll)%daughter(imeta)%num
-            ipdb = ipseq
-            mol_wt_rto = polldb(ipdb)%mol_wt / polldb(jpoll)%mol_wt
-            chpoll_d(jrch)%poll(ipseq)%metab_bot = chpoll_d(jrch)%poll(ipseq)%metab + chpoll%poll(ipoll)%react_bot *     &
-                                           pollcp(jpoll)%daughter(imeta)%ben_fr * mol_wt_rto
-            ch_benthic(jrch)%poll(ipseq) = ch_benthic(jrch)%poll(ipseq) + chpoll_d(jrch)%poll(ipseq)%metab
-          end do
+          
+          !! add decay to daughter pollutants
+          !ICRA commented lines
+          !do imeta = 1, pollcp(jpoll)%num_metab
+          !  ipseq = pollcp(jpoll)%daughter(imeta)%num
+          !  ipdb = ipseq
+          !  mol_wt_rto = polldb(ipdb)%mol_wt / polldb(jpoll)%mol_wt
+          !  chpoll_d(jrch)%poll(ipseq)%metab_bot = chpoll_d(jrch)%poll(ipseq)%metab + chpoll%poll(ipoll)%react_bot *     &
+          !                                 pollcp(jpoll)%daughter(imeta)%ben_fr * mol_wt_rto
+          !  ch_benthic(jrch)%poll(ipseq) = ch_benthic(jrch)%poll(ipseq) + chpoll_d(jrch)%poll(ipseq)%metab
+          !end do
         end if
 
         !if (jrch == 46 .or. jrch == 38 .or. jrch == 7 .or. jrch == 2) then

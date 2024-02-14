@@ -189,7 +189,7 @@
       !! Pollutant databases
       type input_pollutant_databases
         character(len=25) :: pollutant_pol = "pollutants.def"
-        character(len=25) :: pollutant_om = "pollutants_om.exc"
+        character(len=25) :: exco_poll = "pollutants_om.exc"
       end type input_pollutant_databases
       type (input_pollutant_databases) :: in_polldb
       

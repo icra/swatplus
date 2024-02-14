@@ -97,15 +97,16 @@
 
           tpoll1 = poll_end
           respoll_d(jres)%poll(ipoll)%react = poll_init - poll_end
+          !ICRA commented lines
           !! add decay to daughter pollutants
-          do imeta = 1, pollcp(ipoll)%num_metab
-            ipseq = pollcp(ipoll)%daughter(imeta)%num
-            ipdb = cs_db%poll_num(ipseq)
-            mol_wt_rto = polldb(ipdb)%mol_wt / polldb(ipoll)%mol_wt
-            respoll_d(jres)%poll(ipseq)%metab = respoll_d(jres)%poll(ipseq)%metab + respoll_d(jres)%poll(ipoll)%react *     &
-                                           pollcp(ipoll)%daughter(imeta)%soil_fr * mol_wt_rto
-            res_water(jres)%poll(ipseq) = res_water(jres)%poll(ipseq) + respoll_d(jres)%poll(ipseq)%metab
-          end do
+          !do imeta = 1, pollcp(ipoll)%num_metab
+          !  ipseq = pollcp(ipoll)%daughter(imeta)%num
+          !  ipdb = cs_db%poll_num(ipseq)
+          !  mol_wt_rto = polldb(ipdb)%mol_wt / polldb(ipoll)%mol_wt
+          !  respoll_d(jres)%poll(ipseq)%metab = respoll_d(jres)%poll(ipseq)%metab + respoll_d(jres)%poll(ipoll)%react *     &
+          !                                 pollcp(ipoll)%daughter(imeta)%soil_fr * mol_wt_rto
+          !  res_water(jres)%poll(ipseq) = res_water(jres)%poll(ipseq) + respoll_d(jres)%poll(ipseq)%metab
+          !end do
         end if
         
         !! determine pollutant lost through volatilization
@@ -171,14 +172,15 @@
           tpoll2 = poll_end
           respoll_d(jres)%poll(ipoll)%react_bot = poll_init - poll_end
           !! add decay to daughter pollutants
-          do imeta = 1, pollcp(ipoll)%num_metab
-            ipseq = pollcp(ipoll)%daughter(imeta)%num
-            ipdb = cs_db%poll_num(ipseq)
-            mol_wt_rto = polldb(ipdb)%mol_wt / polldb(ipoll)%mol_wt
-            respoll_d(jres)%poll(ipseq)%metab = respoll_d(jres)%poll(ipseq)%metab + respoll_d(jres)%poll(ipoll)%react *     &
-                                           pollcp(ipoll)%daughter(imeta)%soil_fr * mol_wt_rto
-            res_benthic(jres)%poll(ipseq) = res_benthic(jres)%poll(ipseq) + respoll_d(jres)%poll(ipseq)%metab
-          end do
+          !ICRA commented lines
+          !do imeta = 1, pollcp(ipoll)%num_metab
+          !  ipseq = pollcp(ipoll)%daughter(imeta)%num
+          !  ipdb = cs_db%poll_num(ipseq)
+          !  mol_wt_rto = polldb(ipdb)%mol_wt / polldb(ipoll)%mol_wt
+          !  respoll_d(jres)%poll(ipseq)%metab = respoll_d(jres)%poll(ipseq)%metab + respoll_d(jres)%poll(ipoll)%react *     &
+          !                                 pollcp(ipoll)%daughter(imeta)%soil_fr * mol_wt_rto
+          !  res_benthic(jres)%poll(ipseq) = res_benthic(jres)%poll(ipseq) + respoll_d(jres)%poll(ipseq)%metab
+          !end do
         end if
 
         !! determine pollutant lost from sediment by burial

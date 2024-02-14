@@ -244,17 +244,15 @@
         iob = sp_ob1%exco + irec - 1
 
         do ipoll = 1, num_poll
-          if (poll_om(irec, ipoll)%load > 0) then
+          if (exco_poll(irec, ipoll)%load > 0) then
+
             if(ob(iob)%obtyp_out(1) == 'sdc') then
 
               icha = ob(iob)%obtypno_out(1)
               iob_ch =  sp_ob1%chandeg + icha - 1
-
-              write (*,1236) ob(iob)%name, ob(iob_ch)%name, polldb(ipoll)%name, poll_om(irec, ipoll)%load
-              1236 format ("Found:", 2x, a, 2x, "to", 2x, a, 2x, a, 2x, F4.1)
               
-              ! Podria ser obcs(iob_ch) enlloc de obcs(iob) ????
-              obcs(iob)%hd(1)%poll(ipoll) = poll_om(irec, ipoll)%load * 1000000 ! mg = kg * 1000000
+              !obcs(iob)%hd(1)%poll(ipoll) = exco_poll(irec, ipoll)%load * 1000000 ! mg = kg * 1000000
+              print *, "Found:", ob(iob)%name, ob(iob_ch)%name, polldb(ipoll)%name, obcs(iob)%hd(1)%poll(ipoll)
 
               !! calculate volume of active river bed sediment layer - m3
               ch_benthic(icha)%poll(ipoll) = 0

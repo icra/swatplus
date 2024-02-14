@@ -48,8 +48,8 @@
       ! read export coefficient data for all constituent types
       call exco_read_om
       
-      ! ICRA read export coefficient data for pollutants_read_om
-      call pollutants_read_om  
+      ! ICRA read export coefficient data for exco_read_poll
+      call exco_read_poll  
 
 
 
