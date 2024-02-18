@@ -33,6 +33,7 @@
       integer :: irec         !ICRA counter
       integer :: iob          !ICRA counter
       integer :: iob_res      !ICRA counter
+      integer :: ipoll_db    !none      |counter
 
 
       do ires = 1, sp_ob%res
@@ -112,41 +113,20 @@
         !! calculate initial surface area       
         res_wat_d(ires)%area_ha = res_ob(ires)%br1 * res(ires)%flo ** res_ob(ires)%br2
 
+        !! pollutants are initialized to 0
+        do ipoll = 1, cs_db%num_poll
+          ipoll_db = cs_db%poll_num(ipoll)
+          res_water(ires)%poll(ipoll) = 0
+          res_benthic(ires)%poll(ipoll) = 0
+          !! calculate mixing velocity using molecular weight and porosity
+          ised = res_dat(idat)%sed
+          res_ob(ires)%aq_mix_poll(ipoll) = polldb(ipoll_db)%mol_wt * (1. - res_sed(ised)%bd / 2.65)
+        end do
+  
+  
+
       end do
       close(105)
-
-      !! TODO: ICRA Inicialitzar dades de pollutants a dins el reservori si un punt hi aboca directament
-      !! cal replicar la funció de init dels pesticides
-      num_poll = cs_db%num_poll
-
-      write (*,1234) "Start loading of pollutants: ", num_poll
-      1234 format (1x, a, 2x, I4)
-
-      do irec = 1, sp_ob%exco
-        iob = sp_ob1%exco + irec - 1
-
-        do ipoll = 1, num_poll
-          if (exco_poll(irec, ipoll)%load > 0) then
-            if(ob(iob)%obtyp_out(1) == 'res') then
-
-              ires = ob(iob)%obtypno_out(1)
-              iob_res =  sp_ob1%res + ires - 1
-
-              !obcs(iob)%hd(1)%poll(ipoll) = exco_poll(irec, ipoll)%load * 1000000 ! mg = kg * 1000000
-              print *, "Found:", ob(iob)%name, ob(iob_res)%name, polldb(ipoll)%name, obcs(iob)%hd(1)%poll(ipoll)
-              
-              res_benthic(ires)%poll(ipoll) = 0
-              !! calculate mixing velocity using molecular weight and porosity
-              ised = res_dat(idat)%sed
-              res_ob(ires)%aq_mix_poll(ipoll) = polldb(ipoll)%mol_wt * (1. - res_sed(ised)%bd / 2.65)
-    
-            end if
-          end if 
-          
-        end do
-      end do
-
-
 
       return
       end subroutine res_initial

@@ -6,7 +6,7 @@
       character(len=16), dimension(:), allocatable :: path_init_name
       character(len=16), dimension(:), allocatable :: hmet_init_name
       character(len=16), dimension(:), allocatable :: salt_init_name
-      character(len=16), dimension(:), allocatable :: poll_init_name
+      character(len=16), dimension(:), allocatable :: poll_init_name  !ICRA
 
       
       type constituents

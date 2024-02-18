@@ -7,8 +7,8 @@
       use hydrograph_module
       use constituent_mass_module
       use pesticide_data_module
-      use pollutants_data_module
-      use pollutant_module
+      use pollutants_data_module   !ICRA
+      use pollutant_module        !ICRA
 
       
       implicit none      
@@ -32,7 +32,9 @@
       integer :: num_poll !ICRA Retorna el numero de pollutants
       integer :: ipoll    !ICRA counter
       integer :: iob_ch  !ICRA counter
-      character(len=16) :: poll_name   !!                      |pollutant name
+      integer :: ipoll_db               !ICRA      |counter
+
+      character(len=16) :: poll_name   !!          ICRA      |pollutant name
       
       real :: aa                      !none         |area/area=1 (used to calculate velocity with
                                       !             |Manning"s equation)
@@ -233,34 +235,17 @@
         fp_om_water_init(ich) = fp_stor(ich)
       end do
       
-      !! TODO: ICRA Inicialitzar dades de pollutants a dins el canal
-      !! cal replicar la funció de init dels pesticides
-      num_poll = cs_db%num_poll
-
-      write (*,1234) "Start loading of pollutants: ", num_poll
-      1234 format (1x, a, 2x, I4)
-
-      do irec = 1, sp_ob%exco
-        iob = sp_ob1%exco + irec - 1
-
-        do ipoll = 1, num_poll
-          if (exco_poll(irec, ipoll)%load > 0) then
-
-            if(ob(iob)%obtyp_out(1) == 'sdc') then
-
-              icha = ob(iob)%obtypno_out(1)
-              iob_ch =  sp_ob1%chandeg + icha - 1
-              
-              !obcs(iob)%hd(1)%poll(ipoll) = exco_poll(irec, ipoll)%load * 1000000 ! mg = kg * 1000000
-              print *, "Found:", ob(iob)%name, ob(iob_ch)%name, polldb(ipoll)%name, obcs(iob)%hd(1)%poll(ipoll)
-
-              !! calculate volume of active river bed sediment layer - m3
-              ch_benthic(icha)%poll(ipoll) = 0
-              !! calculate mixing velocity using molecular weight and porosity
-              sd_ch(icha)%aq_mix_poll(ipoll) = polldb(ipoll)%mol_wt ** (-.6666) * (1. - sd_ch(icha)%ch_bd / 2.65) * (69.35 / 365)
-            end if
-          end if 
-          
+      ! initialize pollutants to 0
+      do ich = 1, sp_ob%chandeg
+        iob = sp_ob1%chandeg + ich - 1
+        ichdat = ob(iob)%props
+        ich_ini = sd_dat(ichdat)%init
+        do ipoll = 1, cs_db%num_poll
+          ipoll_db = cs_db%poll_num(ipoll)
+          ch_water(ich)%poll(ipoll) = 0
+          ch_benthic(ich)%poll(ipoll) = 0
+          !! calculate mixing velocity using molecular weight and porosity
+          sd_ch(ich)%aq_mix_poll(ipoll) = polldb(ipoll_db)%mol_wt ** (-.6666) * (1. - sd_ch(ich)%ch_bd / 2.65) * (69.35 / 365)
         end do
       end do
 

@@ -56,9 +56,7 @@
         jsed = res_dat(idb)%sed
         respoll_d(jres)%poll(ipoll)%tot_in = obcs(icmd)%hin%poll(ipoll) 
 
-        !tpoll1 = obcs(icmd)%hin%poll(ipoll) + res_water(jres)%poll(ipoll)
-        tpoll1 = obcs(icmd)%hin%poll(ipoll) + res_water(jres)%poll(ipoll) * res(jres)%flo    !ICRA  
-
+        tpoll1 = obcs(icmd)%hin%poll(ipoll) + res_water(jres)%poll(ipoll)
 
         bedvol = 1000. * res_wat_d(jres)%area_ha * polldb(ipoll)%ben_act_dep + .01
         tpoll2 = res_benthic(jres)%poll(ipoll) * bedvol
@@ -221,9 +219,9 @@
         if (tpoll1 < 1.e-10) tpoll1 = 0.0
         if (tpoll2 < 1.e-10) tpoll2 = 0.0
         
-        res_water(jres)%poll(ipoll) = tpoll1 / res(jres)%flo
-        res_benthic(jres)%poll(ipoll) = tpoll2 / bedvol
-
+        res_water(jres)%poll(ipoll) = tpoll1
+        res_benthic(jres)%poll(ipoll) = tpoll2
+        
         !ICRA calculate amount of pollutants leaving reservoir
         hcs2%poll(ipoll) = sorpoll + solpoll
 

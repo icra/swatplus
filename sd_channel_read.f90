@@ -6,7 +6,7 @@
       use channel_data_module
       use channel_velocity_module
       use ch_pesticide_module
-      use ch_pollutant_module
+      use ch_pollutant_module !ICRA
       use sd_channel_module
       use hydrograph_module
       use constituent_mass_module
