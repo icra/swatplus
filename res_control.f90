@@ -127,11 +127,13 @@
         !! ICRA perform reservoir pollutants transformations
         call res_poll (jres)
 
-
         !! set values for outflow variables
         ob(icmd)%hd(1) = ht2
-        obcs(icmd)%hd(1) = hcs2 !ICRA
-
+             
+        !! set constituents for routing
+        if (cs_db%num_poll > 0) then
+          obcs(icmd)%hd(1)%poll = hcs2%poll
+        end if
 
         if (time%step > 0) then
           do ii = 1, time%step
