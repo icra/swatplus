@@ -3,7 +3,6 @@
        use calibration_data_module
        use plant_data_module
        use input_file_module
-       use hru_module, only : hru, hru_init
        use soil_module
        use plant_module
        use hydrograph_module
@@ -18,14 +17,7 @@
        character (len=80) :: titldum   !           |title of file
        character (len=80) :: header    !           |header of file
        integer :: eof                  !           |end of file
-       integer :: icom                 !           | 
        logical :: i_exist              !none       |check to determine if file exists
-       integer :: j                    !none       |counter
-       integer :: nplt                 !           |
-       integer :: nly1                 !           |
-       integer :: isched
-       integer :: id
-       integer :: iauto
        
        eof = 0
 
@@ -44,7 +36,7 @@
            exit
          enddo
 
-         if (cal_codes%hyd_hru == "y" .or. cal_codes%hyd_hrul == "y".or.    &
+         if (cal_codes%hyd_hru /= "n" .or. cal_codes%hyd_hrul == "y".or.    &
              cal_codes%plt == "y" .or. cal_codes%sed == "y" .or.            &
              cal_codes%nut == "y" .or. cal_codes%chsed == "y" .or.          &
              cal_codes%chnut == "y" .or. cal_codes%res == "y") cal_soft = "y"

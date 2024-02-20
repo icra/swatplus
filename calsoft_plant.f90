@@ -1,6 +1,6 @@
       subroutine calsoft_plant
 
-      use hru_module, only : ihru, hru, hru_init
+      use hru_module, only : hru, hru_init
       use hydrograph_module
       use ru_module
       use aquifer_module
@@ -89,6 +89,11 @@
         do ireg = 1, db_mx%plcal_reg
           nvar = plcal(ireg)%lum_num    ! epco is second variable
           do ilum = 1, plcal(ireg)%lum_num
+            !! use actual value for epco and not change in value like other parms
+            if (iterall == 1) then
+              plcal(ireg)%lum(ilum)%prm%epco = pl_prms(ireg)%prm(ilum)%init_val
+            end if
+            
             soft = plcal(ireg)%lum(ilum)%meas%yield
             diff = 0.
             if (soft > 1.e-6) diff = abs((soft - plcal(ireg)%lum(ilum)%aa%yield) / soft)
@@ -525,6 +530,5 @@
         end do      ! ist
           
       end do    ! iter_all loop
-
 	  return
       end subroutine calsoft_plant

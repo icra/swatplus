@@ -14,7 +14,6 @@
                   
       character (len=80) :: titldum   !           |title of file
       character (len=80) :: header    !           |header of file
-      character (len=13) :: file
       integer :: eof                  !           |end of file
       integer :: i                    !none       |counter 
       integer :: mdtbl                !none       |ending of loop
@@ -23,10 +22,7 @@
       integer :: iac                  !none       !counter 
       logical :: i_exist              !none       |check to determine if file exists
       integer :: idb                  !none       |counter
-      integer :: ilum                 !none       |counter
-      integer :: iburn                !none       |counter
-      
-      
+       
       mdtbl = 0
       eof = 0
       
@@ -53,7 +49,7 @@
             allocate (dtbl_res(i)%cond(dtbl_res(i)%conds))
             allocate (dtbl_res(i)%alt(dtbl_res(i)%conds,dtbl_res(i)%alts))
             allocate (dtbl_res(i)%act(dtbl_res(i)%acts))
-            allocate (dtbl_res(i)%act_hit(0:dtbl_res(i)%alts))
+            allocate (dtbl_res(i)%act_hit(dtbl_res(i)%alts))
             allocate (dtbl_res(i)%act_typ(dtbl_res(i)%acts))
             allocate (dtbl_res(i)%act_app(dtbl_res(i)%acts))
             allocate (dtbl_res(i)%act_outcomes(dtbl_res(i)%acts,dtbl_res(i)%alts))

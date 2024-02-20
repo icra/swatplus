@@ -3,10 +3,11 @@
       use reservoir_module
       use reservoir_data_module
       use res_pesticide_module
+      use res_salt_module !rtb salt
+      use res_cs_module !rtb cs
       use hydrograph_module
       use constituent_mass_module
       use water_body_module
-      use res_pollutant_module  !ICRA
       
       implicit none     
 
@@ -35,13 +36,14 @@
       allocate (respst_m(mres))
       allocate (respst_y(mres))
       allocate (respst_a(mres))
-
-
-      allocate (respoll_d(mres))  !ICRA
-      allocate (respoll_m(mres))  !ICRA
-      allocate (respoll_y(mres))  !ICRA
-      allocate (respoll_a(mres))  !ICRA
-
+      allocate (ressalt_d(mres)) !rtb salt
+      allocate (ressalt_m(mres))
+      allocate (ressalt_y(mres))
+      allocate (ressalt_a(mres))
+      allocate (rescs_d(mres)) !rtb cs
+      allocate (rescs_m(mres))
+      allocate (rescs_y(mres))
+      allocate (rescs_a(mres))
       
       if (cs_db%num_tot > 0) then
         do ires = 1, sp_ob%res
@@ -55,35 +57,35 @@
             allocate (respst_a(ires)%pest(cs_db%num_pests))
             allocate (res_water(ires)%path(cs_db%num_paths))
           end if 
-          if (cs_db%num_poll > 0) then  !ICRA
-            allocate (res_water(ires)%poll(cs_db%num_poll))
-            allocate (res_benthic(ires)%poll(cs_db%num_poll))
-            allocate (res_ob(ires)%aq_mix_poll(cs_db%num_poll))
-            allocate (respoll_d(ires)%poll(cs_db%num_poll))
-            allocate (respoll_m(ires)%poll(cs_db%num_poll))
-            allocate (respoll_y(ires)%poll(cs_db%num_poll))
-            allocate (respoll_a(ires)%poll(cs_db%num_poll))
-          end if 
           allocate (res_benthic(ires)%path(cs_db%num_paths))
           allocate (res_water(ires)%hmet(cs_db%num_metals))
           allocate (res_benthic(ires)%hmet(cs_db%num_metals))
+          !rtb salt
+          if (cs_db%num_salts > 0) then
+            allocate (ressalt_d(ires)%salt(cs_db%num_salts))
+            allocate (ressalt_m(ires)%salt(cs_db%num_salts))
+            allocate (ressalt_y(ires)%salt(cs_db%num_salts))
+            allocate (ressalt_a(ires)%salt(cs_db%num_salts))  
+          endif
           allocate (res_water(ires)%salt(cs_db%num_salts))
+          allocate (res_water(ires)%saltc(cs_db%num_salts))
           allocate (res_benthic(ires)%salt(cs_db%num_salts))
+          !rtb cs
+          if (cs_db%num_cs > 0) then
+            allocate (rescs_d(ires)%cs(cs_db%num_cs))
+            allocate (rescs_m(ires)%cs(cs_db%num_cs))
+            allocate (rescs_y(ires)%cs(cs_db%num_cs))
+            allocate (rescs_a(ires)%cs(cs_db%num_cs))  
+          endif
+          allocate (res_water(ires)%cs(cs_db%num_cs))
+          allocate (res_water(ires)%csc(cs_db%num_cs))
+          allocate (res_benthic(ires)%cs(cs_db%num_cs))
         end do
-
         if (cs_db%num_pests > 0) then
           allocate (brespst_d%pest(cs_db%num_pests))
           allocate (brespst_m%pest(cs_db%num_pests))
           allocate (brespst_y%pest(cs_db%num_pests))
           allocate (brespst_a%pest(cs_db%num_pests))
-        end if
-
-        !ICRA
-        if (cs_db%num_poll > 0) then
-          allocate (brespoll_d%poll(cs_db%num_poll))
-          allocate (brespoll_m%poll(cs_db%num_poll))
-          allocate (brespoll_y%poll(cs_db%num_poll))
-          allocate (brespoll_a%poll(cs_db%num_poll))
         end if
       end if
 

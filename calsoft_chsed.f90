@@ -26,7 +26,6 @@
       real :: chg_val            !          |
       integer :: ich_s           !none      |counter
       integer :: iich            !          |
-      integer :: iihru           !none      |counter
       integer :: icov            !none      |counter
       real :: rmeas              !          |
       real :: denom              !          |
@@ -99,6 +98,7 @@
         ! 1st cover adjustment 
         if (isim > 0) then
           cal_sim =  " first chan erod adj "
+          cal_adj = chg_val
           call time_control
         end if
 
@@ -159,6 +159,7 @@
         ! cover adjustment
         if (isim > 0) then
           cal_sim =  " chan erodibility adj "
+          cal_adj = chg_val
           call time_control
         end if
           end do      ! icov

@@ -7,34 +7,27 @@
       use hydrograph_module
       use constituent_mass_module
       use pesticide_data_module
-      use pollutants_data_module   !ICRA
-      use pollutant_module        !ICRA
-
       
       implicit none      
 
       real :: kh
       integer :: idb                  !             |
       integer :: i                    !none         |counter  
-      integer :: icon, iob, ichdat
+      integer :: iob, ichdat
       integer :: ich_ini                !none      |counter
       integer :: iom_ini                !none      |counter
       integer :: ipest_ini              !none      |counter
       integer :: ipest_db               !none      |counter
       integer :: ipath_ini              !none      |counter
+      integer :: isalt_ini							!none      |counter
+      integer :: ics_ini                !none      |counter
       integer :: ipest                  !none      |counter
       integer :: ipath                  !none      |counter
       integer :: idat
       integer :: i_dep                  !none      |counter
-      integer :: ifp_dep                !none      |counter
       integer :: icha
-      
-      integer :: num_poll !ICRA Retorna el numero de pollutants
-      integer :: ipoll    !ICRA counter
-      integer :: iob_ch  !ICRA counter
-      integer :: ipoll_db               !ICRA      |counter
-
-      character(len=16) :: poll_name   !!          ICRA      |pollutant name
+      integer :: isalt
+      integer :: ics
       
       real :: aa                      !none         |area/area=1 (used to calculate velocity with
                                       !             |Manning"s equation)
@@ -51,16 +44,9 @@
       integer :: max                  !             |
       real :: rh                      !m            |hydraulic radius
       real :: qman                    !m^3/s or m/s |flow rate or flow velocity
-      real :: tt1                     !km s/m       |time coefficient for specified depth
-      real :: tt2                     !km s/m       |time coefficient for bankfull depth
-      real :: qq1                     !m^3/s        |flow rate for a specified depth
       real :: bedvol                  !m^3          |volume of river bed sediment
       
       real :: dep                     !             |
-      real :: area                    !             |
-      real :: a_bf                    !             |
-      real :: p_bf                    !             |
-      real :: flo_rate                !             |
       real :: vel                     !             |
       real :: flow_dep
       real :: celerity
@@ -72,14 +58,14 @@
       real :: denom        !none              |variable to hold intermediate calculation
       real :: rto          !none              |ratio of channel volume to total volume
       real :: rto1         !none              |ratio of flood plain volume to total volume
-
-      integer :: irec         !OLlorente         |Nova variable que fa la funció que feia la variable "ich" a la funció que inicialitza els pollutants representant l'iterador dels recall points
+      real :: sumc         !none              |sum of Muskingum coefficients
       
       do i = 1, sp_ob%chandeg
         icmd = sp_ob1%chandeg + i - 1
         idat = ob(icmd)%props
         idb = sd_dat(idat)%hyd
         sd_ch(i)%name = sd_chd(idb)%name
+        sd_ch(i)%obj_no = icmd
         sd_ch(i)%order = sd_chd(idb)%order
         sd_ch(i)%chw = sd_chd(idb)%chw
         sd_ch(i)%chd = sd_chd(idb)%chd
@@ -91,16 +77,17 @@
         sd_ch(i)%chk = sd_chd(idb)%chk      
         sd_ch(i)%cherod = sd_chd(idb)%cherod
         sd_ch(i)%cov = sd_chd(idb)%cov
-        sd_ch(i)%wd_rto = sd_chd(idb)%wd_rto
-        if (sd_ch(i)%wd_rto < 1.e-6) sd_ch(i)%wd_rto = 4.
+        sd_ch(i)%sinu = sd_chd(idb)%sinu
+        if (sd_ch(i)%sinu < 1.05) sd_ch(i)%sinu = 1.05
         sd_ch(i)%chseq = sd_chd(idb)%chseq
-        if (sd_ch(i)%chseq < 1.e-9) sd_ch(i)%chseq = .000001
+        if (sd_ch(i)%chseq < 1.e-6) sd_ch(i)%chseq = 0.5
         sd_ch(i)%d50 = sd_chd(idb)%d50
         sd_ch(i)%ch_clay = sd_chd(idb)%ch_clay
         sd_ch(i)%carbon = sd_chd(idb)%carbon
         sd_ch(i)%ch_bd = sd_chd(idb)%ch_bd
         sd_ch(i)%chss = sd_chd(idb)%chss
-        sd_ch(i)%bedldcoef = sd_chd(idb)%bedldcoef
+        sd_ch(i)%bankfull_flo = sd_chd(idb)%bankfull_flo
+        if (sd_ch(i)%bankfull_flo <= 1.e-6) sd_ch(i)%bankfull_flo = 0.
         sd_ch(i)%fps = sd_chd(idb)%fps
         if (sd_ch(i)%fps > sd_ch(i)%chs) sd_ch(i)%fps = sd_ch(i)%chs
         if (sd_ch(i)%fps <= 1.e-6) sd_ch(i)%fps = .00001       !!! nbs 1/24/22
@@ -113,7 +100,7 @@
         kh = sd_ch(i)%hc_kh
         if (kh > 1.e-6) then
           sd_ch(i)%hc_co = .37 * (17.83 + 16.56 * kh - 15. * sd_ch(i)%cov)
-          sd_ch(i)%hc_co = amax1 (0., sd_ch(i)%hc_co)
+          sd_ch(i)%hc_co = max (0., sd_ch(i)%hc_co)
         else
           sd_ch(i)%hc_co = 0.
         end if
@@ -160,8 +147,8 @@
       end do
         
       !! Compute storage time constant for reach (msk_co1 + msk_co2 = 1.)
-	    msk1 = bsn_prm%msk_co1 / (bsn_prm%msk_co1 + bsn_prm%msk_co2)
-	    msk2 = bsn_prm%msk_co2 / (bsn_prm%msk_co1 + bsn_prm%msk_co2)
+	  msk1 = bsn_prm%msk_co1 / (bsn_prm%msk_co1 + bsn_prm%msk_co2)
+	  msk2 = bsn_prm%msk_co2 / (bsn_prm%msk_co1 + bsn_prm%msk_co2)
       xkm = sd_ch(i)%stor_dis_bf * msk1 + sd_ch(i)%stor_dis_01bf * msk2
       
       !! Muskingum numerical stability -Jaehak Jeong, 2011
@@ -185,8 +172,14 @@
         det = det / sd_ch(i)%msk%substeps
         denom = 2. * xkm * (1. - bsn_prm%msk_x) + det
         sd_ch(i)%msk%c1 = (det - 2. * xkm * bsn_prm%msk_x) / denom
+        sd_ch(i)%msk%c1 = Max(0., sd_ch(i)%msk%c1)
         sd_ch(i)%msk%c2 = (det + 2. * xkm * bsn_prm%msk_x) / denom
         sd_ch(i)%msk%c3 = (2. * xkm * (1. - bsn_prm%msk_x) - det) / denom
+        !! c1+c2+c3 must equal 1
+        sumc = sd_ch(i)%msk%c1 + sd_ch(i)%msk%c2 + sd_ch(i)%msk%c3
+        sd_ch(i)%msk%c1 = sd_ch(i)%msk%c1 / sumc
+        sd_ch(i)%msk%c2 = sd_ch(i)%msk%c2 / sumc
+        sd_ch(i)%msk%c3 = sd_ch(i)%msk%c3 / sumc
 
       end do    !end of channel loop
  
@@ -235,21 +228,6 @@
         fp_om_water_init(ich) = fp_stor(ich)
       end do
       
-      ! initialize pollutants to 0
-      do ich = 1, sp_ob%chandeg
-        iob = sp_ob1%chandeg + ich - 1
-        ichdat = ob(iob)%props
-        ich_ini = sd_dat(ichdat)%init
-        do ipoll = 1, cs_db%num_poll
-          ipoll_db = cs_db%poll_num(ipoll)
-          ch_water(ich)%poll(ipoll) = 0
-          ch_benthic(ich)%poll(ipoll) = 0
-          !! calculate mixing velocity using molecular weight and porosity
-          sd_ch(ich)%aq_mix_poll(ipoll) = polldb(ipoll_db)%mol_wt ** (-.6666) * (1. - sd_ch(ich)%ch_bd / 2.65) * (69.35 / 365)
-        end do
-      end do
-
-
       ! initialize pesticides in channel water and benthic from input data
       do ich = 1, sp_ob%chandeg
         iob = sp_ob1%chandeg + ich - 1
@@ -279,6 +257,34 @@
           ch_benthic(ich)%path(ipath) = path_water_ini(ipest_ini)%benthic(ipath)
         end do
       end do
+      
+      !initial salt ion concentration (g/m3) in channel water, from input data (salt_channel.ini)
+      if(cs_db%num_salts > 0) then
+        do ich=1,sp_ob%chandeg
+          iob = sp_ob1%chandeg + ich - 1
+          ichdat = ob(iob)%props
+          ich_ini = sd_dat(ichdat)%init
+          isalt_ini = sd_init(ich_ini)%salt
+          do isalt=1,cs_db%num_salts
+            ch_water(ich)%saltc(isalt) = salt_cha_ini(isalt_ini)%conc(isalt) !g/m3
+            ch_water(ich)%salt(isalt) = (salt_cha_ini(isalt_ini)%conc(isalt)/1000.) * tot_stor(ich)%flo !kg
+          enddo
+        enddo
+      endif
 
+      !initial constituent concentration (g/m3) in channel water, from input data (cs_channel.ini)
+      if(cs_db%num_cs > 0) then
+        do ich=1,sp_ob%chandeg
+          iob = sp_ob1%chandeg + ich - 1
+          ichdat = ob(iob)%props
+          ich_ini = sd_dat(ichdat)%init
+          ics_ini = sd_init(ich_ini)%cs
+          do ics=1,cs_db%num_cs
+            ch_water(ich)%csc(ics) = cs_cha_ini(ics_ini)%conc(ics)
+            ch_water(ich)%cs(ics) = (cs_cha_ini(ics_ini)%conc(ics)/1000.) * tot_stor(ich)%flo !kg
+          enddo
+        enddo
+			endif
+      
       return
       end subroutine sd_hydsed_init

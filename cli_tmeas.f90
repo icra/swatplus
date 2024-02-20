@@ -24,9 +24,9 @@
       integer :: day_mo
       integer :: mo
       
-       mtmp = 0
-       eof = 0
-       imax = 0
+      mtmp = 0
+      eof = 0
+      imax = 0
 
       !! read all measured daily temperature data
       inquire (file=in_cli%tmp_cli, exist=i_exist)
@@ -69,6 +69,7 @@
       do i = 1, imax
         read (107,*,iostat = eof) tmp(i)%filename
         if (eof < 0) exit
+        num_tot = 0
         
 !!!!!weather path code
        if (in_path_tmp%tmp == "null") then
@@ -110,7 +111,7 @@
        do 
          read (108,*,iostat=eof) iyr, istep, tempx, tempn
          if (eof < 0) exit
-         if (iyr == time%yrc .and. istep == time%day_start) exit
+         if (iyr >= time%yrc .and. istep >= time%day_start) exit
        end do
 
        backspace (108)

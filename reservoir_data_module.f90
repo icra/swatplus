@@ -13,6 +13,16 @@
       type (reservoir_data_char_input), dimension(:), allocatable :: res_dat_c
       type (reservoir_data_char_input), dimension(:), allocatable :: wet_dat_c
 
+      !rtb salt/cs
+      type reservoir_data_char_input_cs  
+        character (len=25) :: pst                   !pesticide inputs-points to pesticide.res    
+        character (len=25) :: weir                  !weir inputs-points to weir.res    Jaehak 2022
+        character (len=25) :: salt                  !salt inputs - points to salt_res rtb salt
+        character (len=25) :: cs                    !constituent inputs - points to cs_res rtb cs
+      end type reservoir_data_char_input_cs
+      type (reservoir_data_char_input_cs), dimension(:), allocatable :: res_dat_c_cs
+      type (reservoir_data_char_input_cs), dimension(:), allocatable :: wet_dat_c_cs
+      
       type reservoir_data
         character(len=25) :: name = "default"
         integer :: init = 0                   !initial data-points to initial.res
@@ -21,6 +31,9 @@
         integer :: sed = 0                    !sediment inputs-points to sediment.res
         integer :: nut = 0                    !nutrient inputs-points to nutrient.res
         integer :: pst = 0                    !pesticide inputs-points to pesticide.res
+        integer :: salt = 0                   !salt input-points to salt.res
+        integer :: cs = 0                     !constituent inputs-points to cs.res
+        character (len=25) :: weir            !weir inputs-points to weir.res  Jaehak 2022  
       end type reservoir_data
       type (reservoir_data), dimension(:), allocatable :: res_dat
       type (reservoir_data), dimension(:), allocatable :: wet_dat
@@ -43,6 +56,7 @@
         integer :: path = 1                 !points to initial pathogen input file
         integer :: hmet = 1                 !points to initial heavy metals input file
         integer :: salt = 1                 !points to initial salt input file
+        integer :: cs = 1                   !points to initial constituent input file (rtb cs)
       end type reservoir_init_data
       type (reservoir_init_data), dimension(:), allocatable :: res_init
       type (reservoir_init_data), dimension(:), allocatable :: wet_init
@@ -107,15 +121,14 @@
       end type reservoir_nut_data
       type (reservoir_nut_data), dimension(:), allocatable :: res_nut
           
-      type reservoir_weir_outflow
+      type reservoir_weir_outflow   !updated by Jaehak 2022
         character(len=25) :: name
-        real :: num_steps = 24        !none          |number of time steps in day for weir routing
-        real :: c = 1.                !none          |weir discharge coefficient 
-        real :: k = 150000.           !m^0.5/d       |energy coefficient (broad_crested=147,000" sharp crested=153,000)
-        real :: w = 2.                !m             |width
-        real :: bcoef = 1.75          !none          |velocity exponent coefficient for bedding material
-        real :: ccoef = 1.            !none          |depth exponent coefficient for bedding material
+																								  
+        real :: c = 1.84              !none          |weir discharge linear coefficient 
+        real :: k = 2.6               !none          |weir discharge exponential coefficient
+        real :: w = 2.5               !m             |width
+        real :: h = 0.0               !m             |height of weir above bottoom of impoundment
       end type reservoir_weir_outflow
-      type (reservoir_weir_outflow),dimension(:),allocatable :: res_weir    
+      type (reservoir_weir_outflow),dimension(:),allocatable :: res_weir   
     
       end module reservoir_data_module 

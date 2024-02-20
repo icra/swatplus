@@ -32,11 +32,10 @@
 
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
 
-      use hru_module, only : hru, sdr, dormhr, hru, i_sep, isep, isep_ly, iseptic
+      use hru_module, only : hru, sdr, dormhr, ihru
       use soil_module
       use plant_module
       use climate_module
-      use septic_data_module
       use plant_data_module
       use pesticide_data_module
       use basin_module
@@ -51,9 +50,6 @@
 
       integer :: j              !none          |counter            
       integer :: l              !none          |counter
-      integer :: idp            !              | 
-      real :: t_ch              !hr            |time for flow entering the farthest upstream 
-                                !              |channel to reach the subbasin outlet
       real :: scmx              !mm/hr         |maximum soil hydraulic conductivity
       real :: xx                !none          |variable to hold calculation result
       real :: tsoil             !              | 
@@ -63,17 +59,7 @@
       real :: sffc              !              | 
       integer :: nly            !none          |end of loop
       integer :: k              !none          |counter
-      real :: plt_zmx           !              |
-      integer :: ipl            !none          |counter
-      real :: plt_zmxp          !              | 
-      integer :: max            !              |
-      integer :: min            !              |
-      real :: dep_new           !              |
-      integer :: jj             !none          |counter
-      real :: solpst            !              |
-      integer :: n              !              |
-      real :: wt1               !none          |conversion factor to convert kg/ha to g/t(ppm) 
-      integer :: ly             !none          |counter   
+      integer :: ipl            !none          |counter  
       integer :: isdr           !none          |conversion factor to convert kg/ha to g/t(ppm)
       real :: sd
       real :: dd
@@ -83,6 +69,7 @@
       real :: rock
 
       do j = 1, sp_ob%hru
+       ihru = j
        iob = hru(j)%obj_no
        iwst = ob(iob)%wst
        iwgn = wst(iwst)%wco%wgn
@@ -140,25 +127,6 @@
 !!    set maximum depth in soil to maximum rooting depth of plant
       soil(j)%zmx = soil(j)%phys(nly)%d
       
-!! create a biozone layer in septic HRUs
-      isep = iseptic(j)
-      if (sep(isep)%opt  /= 0) then 
-	 if (sep(isep)%z + sep(isep)%thk > soil(j)%phys(nly)%d) then
-	   if (soil(j)%phys(nly)%d > sep(isep)%thk + 10.) then !min. soil thickness for biozone layer (10mm top+biozone layer thickness)
-	      sep(isep)%z = soil(j)%phys(nly)%d - sep(isep)%thk
-	   else
-	      sep(isep)%z = soil(j)%phys(nly)%d
-	      soil(j)%phys(nly)%d = soil(j)%phys(nly)%d + sep(isep)%thk
-	   endif
-       endif 
-       if (sep(isep)%z > 0.) then 
-         call layersplit (sep(isep)%z)
-         dep_new = sep(isep)%z + sep(isep)%thk
-         call layersplit (dep_new)  
-         i_sep(j) = isep_ly
-       endif    
-      endif
-
 !!    compute lateral flow travel time
         if (hru(j)%hyd%lat_ttime <= 0.) then
             scmx = 0.

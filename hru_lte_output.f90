@@ -5,7 +5,11 @@
       use output_landscape_module
       use hydrograph_module, only : sp_ob1, ob
 
+      implicit none
+
       integer, intent (in) :: isd
+      integer :: iob
+      real :: const
       
       iob = sp_ob1%hru_lte + isd - 1
               
@@ -177,7 +181,7 @@
 
       return
      
-100   format (4i6,2i8,2x,a,39f12.3)
+100   format (4i6,2i8,2x,a,40f12.3)
 101   format (1x,4i6,i7,i8,2x,a,31f12.3)
  
       end subroutine hru_lte_output

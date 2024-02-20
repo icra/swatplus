@@ -3,7 +3,7 @@
       use sd_channel_module
       use hru_lte_module
       use organic_mineral_mass_module
-      use hru_module, only : hru, hru_init, ihru, bss
+      use hru_module, only : hru, hru_init, bss
       use soil_module
       use plant_module
       use plant_data_module
@@ -44,6 +44,7 @@
         allocate (pl_mass_init(iihru)%seed(nplt))
         allocate (pl_mass_init(iihru)%root(nplt))
         allocate (pl_mass_init(iihru)%yield_tot(nplt))
+        allocate (pl_mass_init(iihru)%yield_yr(nplt))
 
         isched = hru(iihru)%mgt_ops
         allocate (pcom_init(iihru)%dtbl(sched(isched)%num_autos))

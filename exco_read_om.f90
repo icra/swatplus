@@ -6,10 +6,13 @@
       use constituent_mass_module
       use maximum_data_module
       use exco_module
+
+      implicit none
  
       character (len=80) :: titldum, header
       integer :: eof, imax, ob1, ob2
       logical :: i_exist              !none       |check to determine if file exists
+      integer :: ii, iexco, iexco_om, iob
 
       eof = 0
       imax = 0
@@ -35,7 +38,6 @@
           allocate (exco(0:imax))       !! change to exco_om         
           allocate (exco_om_num(0:imax))
           allocate (exco_om_name(0:imax))
-          
           rewind (107)
           read (107,*,iostat=eof) titldum
           if (eof < 0) exit
@@ -70,12 +72,9 @@
       ob2 = sp_ob1%exco + sp_ob%exco - 1
       do iob = ob1, ob2
         iexco = ob(iob)%props
-        !print *, 'props', iexco
         iexco_om = exco_om_num(iexco)
         ob(iob)%hd(1) = exco(iexco_om)
-
       end do
-      
       
       return
       end subroutine exco_read_om

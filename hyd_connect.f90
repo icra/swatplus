@@ -12,19 +12,15 @@
       use constituent_mass_module
       use ru_module
       use basin_module
+      use gwflow_module, only: nat_model
       
       implicit none
-      
-      character (len=80) :: titldum   !           |title of file
-      character (len=80) :: header    !           |header of file
-      character (len=16) :: namedum   !           |
+
       integer :: eof                  !           |end of file
       integer :: imax                 !none       |determine max number for array (imax) and total number in file
       character (len=3) :: iob_out    !           !object type out
       character (len=3) :: iobtyp     !none       |object type
-      character (len=3) :: ihtyp      !           |
       integer :: nspu                 !           |
-      !integer :: isp
       integer :: cmdno                !           |
       integer :: idone                !           | 
       !integer :: hydno
@@ -48,15 +44,7 @@
       integer :: ircv                 !none       |counter
       integer :: ircv_ob              !           |
       integer :: max                  !           |
-      integer :: ipath
-      integer :: ihmet
-      integer :: isalt
-      integer :: npests
-      integer :: npaths
-      integer :: nmetals
-      integer :: nsalts
-      
-      
+    
       eof = 0
       imax = 0
       mexco_sp = 0
@@ -86,6 +74,7 @@
       if (sp_ob%gwflow > 0) then     ! 4==gwflow
         sp_ob1%gwflow = nspu
         nspu = sp_ob%gwflow + nspu
+        inquire(file='gwflow.huc12cell',exist=nat_model)
       end if
       if (sp_ob%aqu > 0) then         ! 5==aquifer
         sp_ob1%aqu = nspu
@@ -159,7 +148,6 @@
       if (sp_ob%chan > 0) then
         call hyd_read_connect(in_con%chan_con, "chan    ", sp_ob1%chan, sp_ob%chan, hd_tot%chan, bsn_prm%day_lag_mx) 
         call overbank_read
-        call channel_surf_link
       end if
                                   
       !read connect file for reservoirs
@@ -171,6 +159,8 @@
       if (sp_ob%recall > 0) then
         call hyd_read_connect(in_con%rec_con, "recall  ", sp_ob1%recall, sp_ob%recall, hd_tot%recall, 1) 
         call recall_read
+        call recall_read_salt !rtb salt
+        call recall_read_cs !rtb cs
       end if
                 
       !read connect file for export coefficients
@@ -192,18 +182,15 @@
       !read connect file for swat-deg channels
       if (sp_ob%chandeg > 0) then
         call hyd_read_connect(in_con%chandeg_con, "chandeg ", sp_ob1%chandeg, sp_ob%chandeg, hd_tot%chandeg, bsn_prm%day_lag_mx)
-        
       end if
       
       !read connect file for gwflow
       if (sp_ob%gwflow > 0) then
-        call gwflow_riv !first, read in river cell information
+        call gwflow_chan_read !first, read in channel cell information
         call hyd_read_connect(in_con%gwflow_con, "gwflow  ", sp_ob1%gwflow, sp_ob%gwflow, hd_tot%gwflow, 1)
         call gwflow_read
       end if
       
-      
-
       !! for each hru or defining unit, set all subbasins that contain it 
         do i = 1, sp_ob%objs
           nspu = ob(i)%ru_tot
@@ -311,30 +298,32 @@
       allocate (hin_csz%pest(cs_db%num_pests))
       allocate (hin_csz%path(cs_db%num_paths))
       allocate (hin_csz%hmet(cs_db%num_metals))
-      allocate (hin_csz%salt(cs_db%num_salts))
+      allocate (hin_csz%salt(cs_db%num_salts)) !rtb salt
+      allocate (hin_csz%cs(cs_db%num_cs)) !rtb se 
           
       allocate (hcs1%pest(cs_db%num_pests))
       allocate (hcs1%path(cs_db%num_paths))
       allocate (hcs1%hmet(cs_db%num_metals))
-      allocate (hcs1%salt(cs_db%num_salts))
+      allocate (hcs1%salt(cs_db%num_salts)) !rtb salt
+      allocate (hcs1%cs(cs_db%num_cs)) !rtb cs
         
       allocate (hcs2%pest(cs_db%num_pests))
       allocate (hcs2%path(cs_db%num_paths))
       allocate (hcs2%hmet(cs_db%num_metals))
-      allocate (hcs2%salt(cs_db%num_salts))
-
-      !! ICRA allocate zero arrays for pollutants
-      allocate (hin_csz%poll(cs_db%num_poll))
-      allocate (hcs1%poll(cs_db%num_poll))
-      allocate (hcs2%poll(cs_db%num_poll))
-
+      allocate (hcs2%salt(cs_db%num_salts)) !rtb salt
+      allocate (hcs2%cs(cs_db%num_cs)) !rtb cs
+      
+      allocate (hcs3%pest(cs_db%num_pests))
+      allocate (hcs3%path(cs_db%num_paths))
+      allocate (hcs3%hmet(cs_db%num_metals))
+      allocate (hcs3%salt(cs_db%num_salts)) !rtb salt
+      allocate (hcs3%cs(cs_db%num_cs)) !rtb cs
 
       hin_csz%pest = 0.
       hin_csz%path = 0.
       hin_csz%hmet = 0.
-      hin_csz%salt = 0.
-      hin_csz%poll = 0.
-
+      hin_csz%salt = 0. !rtb salt
+      hin_csz%cs = 0. !rtb cs
 
       !! allocate receiving arrays
       do i = 1, sp_ob%objs
@@ -423,21 +412,18 @@
     do while (idone == 0)
         do i = 1, sp_ob%objs
         
-        if (iord > 1000) then
-          if (ob(i)%fired == 0) then         
-
-            do iob = 1, sp_ob%objs
-              if (ob(iob)%fired == 0 .and. ob(iob)%rcv_tot > 0) then
-                  kk=1
-                write (9001, *) iob, ob(iob)%fired, ob(iob)%typ, ob(iob)%num, ob(iob)%rcv_tot, (ob(iob)%obtyp_in(jj),  &
-                                    ob(iob)%obtypno_in(jj), ob(iob)%obj_in(jj), jj = 1, ob(iob)%rcv_tot)
-              end if 
-            end do
-            write (*,1002)
-            !pause   !!! stop the simulation run (ob(i)%fired == 0)
-            !stop
-            call exit(1)
-          end if
+        if (iord > 1000) then        
+          open (9002,file="looping.con",recl = 8000)
+          write (9002, *) "LOOPING.CON CHECKING INFINITE LOOPS"
+          do iob = 1, sp_ob%objs
+            if (ob(iob)%fired == 0 .and. ob(iob)%rcv_tot > 0) then
+              kk=1
+              write (9002, *) ob(iob)%typ, ob(iob)%num, ob(iob)%rcv_tot, (ob(iob)%obtyp_in(jj),  &
+                                    ob(iob)%obtypno_in(jj), jj = 1, ob(iob)%rcv_tot)
+            end if 
+          end do
+          write (*,1002)
+          call exit(1)
         end if 
    
       
@@ -543,27 +529,18 @@
         end do
         iord = iord + 1
       end do
-      
-      !! write calculated and input drainage areas for all objects except hru's
-      !! the following file is for debugging purposes
-      open (9002,file="drareas.out",recl = 8000)
+
+    !! write calculated and input drainage areas for all objects except hru's
       do iob = 1, sp_ob%objs
         if (ob(iob)%typ /= "hru" .and. ob(iob)%typ /= "ru") then
-        !!! write to diagnostics.out file
-          write (9001, *) iob, ob(iob)%typ, ob(iob)%num, ob(iob)%area_ha, ob(iob)%area_ha_calc,             &
-            ob(iob)%rcv_tot, (ob(iob)%obtyp_in(jj), ob(iob)%obtypno_in(jj), ob(iob)%obj_in(jj),             &
-            ob(iob)%frac_in(jj), &
-            ob(ob(iob)%obj_in(jj))%area_ha, ob(ob(iob)%obj_in(jj))%area_ha_calc, jj = 1, ob(iob)%rcv_tot)
-        !!! write to drareas.out file
-          write (9002, *) iob, ob(iob)%typ, ob(iob)%num, ob(iob)%area_ha, ob(iob)%area_ha_calc,             &
+          write (9004,*) iob, ob(iob)%typ, ob(iob)%num, ob(iob)%area_ha, ob(iob)%area_ha_calc,             &
             ob(iob)%rcv_tot, (ob(iob)%obtyp_in(jj), ob(iob)%obtypno_in(jj), ob(iob)%obj_in(jj),             &
             ob(iob)%frac_in(jj), &
             ob(ob(iob)%obj_in(jj))%area_ha, ob(ob(iob)%obj_in(jj))%area_ha_calc, jj = 1, ob(iob)%rcv_tot)
         end if 
       end do
       
-      
 1002  format (5x,/,"ERROR - An infinite loop is detected in the connect file(s)",/, 15x, "the simulation will end",       &
-                       /, 9x, "(review diagnostics.out file for more info)",/)
+                       /, 9x, "(review looping.con file for more info)",/)
       return
       end subroutine hyd_connect

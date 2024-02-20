@@ -93,6 +93,7 @@
       type (hyd_output), dimension(:),allocatable, target :: wet
       type (hyd_output), dimension(:),allocatable :: res_om_init
       type (hyd_output), dimension(:),allocatable :: wet_om_init
+      type (hyd_output), dimension(:),allocatable :: wet_seep_day !Jaehak 2022 wetland seepage volume
       type (hyd_output) :: resz
       type (hyd_output), pointer :: wbody       !! used for reservoir and wetlands
       
@@ -178,6 +179,22 @@
       end type object_output
       type (object_output), dimension (:), allocatable :: ob_out
       
+      type channel_floodplain_water_balance
+        real :: inflo               !! m3       | inflow
+        real :: outflo              !! m3       | outflow
+        real :: tl                  !! m3       | transmission losses
+        real :: ev                  !! m3       | evaporation
+        real :: ch_stor_init        !! m3       | channel storage at start of time step
+        real :: ch_stor             !! m3       | channel storage at end of time step
+        real :: fp_stor_init        !! m3       | flood plain storage at start of time step (all flood plain storage above wetland emergency volume)
+        real :: fp_stor             !! m3       | flood plain storage at end of time step
+        real :: tot_stor_init       !! m3       | total channel + wetland storage at start of time step
+        real :: tot_stor            !! m3       | total channel + wetland storage at end of time step
+        real :: wet_stor_init       !! m3       | wetland flood plain storage at start of time step
+        real :: wet_stor            !! m3       | wetland flood plain storage at end of time step
+      end type channel_floodplain_water_balance
+      type (channel_floodplain_water_balance), dimension (:), allocatable :: ch_fp_wb
+      
       type timestep
         type (hyd_output), dimension(:),allocatable :: hh
       end type timestep
@@ -195,6 +212,17 @@
         real :: mean = 0
         real, dimension (27) :: p        !probabilities for all points on the fdc
       end type duration_curve_points
+
+      type water_temperature_data
+        character(len=16) :: name
+        real :: sno_mlt = 1.        ! none          |coefficient influencing snowmelt temperature contributions
+        real :: gw = .97            ! none          |coefficient influencing groundwater temperature contributions
+        real :: sur_lat = 1.        ! none          |coefficient influencing suface and lateral flow temperature contributions
+        integer :: airlag_d = 6     ! days          |average air temperature lag
+        real :: hex_coef1 = .67     ! 1/hour        |heat transfer coefficient 1
+        real :: hex_coef2 = 1.16    ! 1/hour        |heat transfer coefficient 2
+      end type water_temperature_data
+      type (water_temperature_data) :: w_temp
 
       integer :: fdc_npts = 27
       real, dimension (27) :: fdc_p = (/.1,.5,1.,2.,3.,5.,10.,15.,20.,25.,30.,35.,40.,45.,50.,55.,60.,65.,70.,75.,80.,85.,90.,95.,&
@@ -217,6 +245,14 @@
         real, dimension (:,:), allocatable :: hyd_flo             !flow hydrograph
       end type inflow_unit_hyds
                
+      type flashiness_index
+        !flashiness index sum ((qi)-q(i-1)) / sum (qi)
+        real :: sum_q_q1            !sum of difference in current day flow minus previous day flow
+        real :: sum_q               !sum of daily flow over simulation period
+        real :: q_prev = 0.         !previous day flow
+        real :: index               !index
+      end type flashiness_index
+               
       type object_connectivity
         character(len=16) :: name = "default"
         character(len=8) :: typ = " "   !object type - ie hru, hru_lte, sub, chan, res, recall
@@ -227,6 +263,7 @@
         real :: plaps                   !precipitation lapse applied to object precip
         real :: tlaps                   !temperature lapse applied to object precip
         real :: area_ha = 80.           !input drainag area - ha
+        integer :: sp_ob_no = 1         !spatial object number - ie: hru number, channel number, etc
         real :: area_ha_calc = 80.      !calculated drainage area-ha. only for checking - doesn't work if routing across landscape
         integer :: props = 1            !properties number from data base (ie hru.dat, sub.dat) - change props to data
         character (len=50) ::  wst_c    !weather station name
@@ -267,6 +304,7 @@
         type (flow_duration_curve) :: fdc                                   !use for daily flows and then use to get median of annual fdc"s
         type (sorted_duration_curve), dimension(:),allocatable :: fdc_ll    !linked list of daily flow for year - dimensioned to 366
         type (sorted_duration_curve), dimension(:),allocatable :: fdc_lla   !linked list of annual flow for simulation - dimensioned to nbyr
+        type (flashiness_index) :: flash_idx                                !flashiness index object
         type (hyd_output) :: hin                                            !inflow hydrograph for surface runon - sum of all inflow hyds
         type (hyd_output) :: hin_sur                                        !inflow hydrograph for surface runoff - sum of all surface inflow hyds
         type (hyd_output) :: hin_lat                                        !inflow hydrograph for lateral soil flow - sum of all lateral inflow hyds
@@ -279,7 +317,9 @@
         real, dimension(:,:), allocatable :: uh                             !subdaily surface runoff unit hydrograph
         real, dimension(:,:), allocatable :: hyd_flo                        !subdaily surface runoff hydrograph
         real, dimension(:),allocatable :: tsin                              !inflow subdaily flow hydrograph
-        type (hyd_output) :: supply                                         !water supply allocation
+        type (hyd_output) :: trans                                          !water transfer in water allocation
+        type (hyd_output) :: hin_tot                                        !total inflow hydrograph to the object
+        type (hyd_output) :: hout_tot                                       !total outflow hydrograph to the object
         real :: demand                                                      !water irrigation demand (ha-m)
         integer :: day_cur = 0                                              !current hydrograph day in ts
         integer :: day_max                                                  !maximum number of days to store the hydrograph
@@ -313,24 +353,14 @@
         real :: amount                          !0 for irr demand; ha-m for min_flo; frac for min_frac
         integer :: rights                       !0-100 scale
       end type water_rights_elements
-      
-      !water rights objects
-      type water_rights_objects
-        character (len=16) :: name              !name of wro or irrigation cummunity
-        character (len=16) :: rule_typ          !
-        real :: right                           !
-        integer :: num_objs                     !number of rights objects
-        real :: demand                          !total demand for the water rights object - m3
-        real, dimension (12) :: min_mon         !minimum flow to leave in channel after withdrawals
-        type (water_rights_elements),dimension(:),allocatable :: field   !irrigation fields
-      end type water_rights_objects
-      type (water_rights_objects),dimension(:),allocatable:: wro         !dimension by wro (num)
 
       !water allocation
       type irrigation_water_transfer
         real :: demand = 0.                     !irrigation demand          |m3
         real :: applied = 0.                    !irrigation applied         |mm
         real :: runoff = 0.                     !irrigation surface runoff  |mm
+        real :: eff = 1.                        !irrigation efficiency as a fraction of irrigation. Jaehak 2022
+        real :: frac_surq                       !fraction of irrigation lost in runoff flow. Jaehak 2022
         !hyd_output units are in mm and mg/L
         type (hyd_output) :: water              !irrigation water
       end type irrigation_water_transfer
@@ -367,9 +397,9 @@
         integer :: pump = 0      !14-number of pump"s or 1st pump command
         integer :: outlet = 0    !15-number of outlet"s or 1st outlet command
         integer :: chandeg = 0   !16-number of swat-deg channel"s or 1st swat-deg channel command
-        integer :: aqu2d = 0     !17-number of 2D aquifer"s or 1st 2D aquifer command
-        integer :: herd = 0      !18-number of herds
-        integer :: wro = 0       !19-number of water rights
+        integer :: aqu2d = 0     !17-not currently used (number of 2D aquifer"s or 1st 2D aquifer command)
+        integer :: herd = 0      !18-not currently used (number of herds)
+        integer :: wro = 0       !19-not currently used (number of water rights)
       end type spatial_objects
       type (spatial_objects) :: sp_ob       !total number of the object
       type (spatial_objects) :: sp_ob1      !first sequential number of the object
@@ -451,10 +481,13 @@
       end type channel_aquifer_elements
       type (channel_aquifer_elements),dimension(:),allocatable :: aq_ch         !sorted by drainage area (smallest first)
       
-      !export coefficient is hyd_output type but not part of an object 
+      !delivery ratio - all fractions 
       type (hyd_output), dimension(:), allocatable :: dr          !delivery ratio for objects- chan, res, lu
 
-      !delevery ratio is hyd_output type but not part of an object 
+      !treatment - fraction of flow and ppm 
+      type (hyd_output), dimension(:), allocatable :: trt         !wastewater treatment plants
+
+      !export coefficient - m3, t, kg
       type (hyd_output), dimension(:), allocatable :: exco        !export coefficient
 
       type hyd_header                                       
@@ -603,21 +636,6 @@
         character (len=15) :: temp_out =   "       temp_out"        !! deg c        |temperature        
       end type sed_hyd_header
       type (sed_hyd_header) :: sd_hyd_hdr
-      
-      type sol_header        
-        character (len=15) :: layer1 =  "        st_mm_1"        !!mm H2O       |amt of water stored in layer 1 
-        character (len=15) :: layer2 =  "        st_mm_2"        !!mm H2O       |amt of water stored in layer 2              
-        character (len=15) :: layer3 =  "        st_mm_3"        !!mm H2O       |amt of water stored in layer 3
-        character (len=15) :: layer4 =  "        st_mm_4"        !!mm H2O       |amt of water stored in layer 4      
-        character (len=15) :: layer5 =  "        st_mm_5"        !!mm H2O       |amt of water stored in layer 5
-        character (len=15) :: layer6 =  "        st_mm_6"        !!mm H2O       |amt of water stored in layer 6 
-        character (len=15) :: layer7 =  "        st_mm_7"        !!mm H2O       |amt of water stored in layer 7
-        character (len=15) :: layer8 =  "        st_mm_8"        !!mm H2O       |amt of water stored in layer 8
-        character (len=15) :: layer9 =  "        st_mm_9"        !!mm H2O       |amt of water stored in layer 9
-        character (len=15) :: layer10 = "       st_mm_10"        !!mm H2O       |amt of water stored in layer 10
-      end type sol_header
-      type (sol_header) :: sol_hdr
-      
      type sd_hyd_header_units
         character (len=15) :: flo_in    =  "          m^3/s"        !! avg daily m^3/s        |volume of water
         character (len=15) :: flo_out   =  "          m^3/s"        !! avg daily m^3/s        |volume of water
@@ -645,7 +663,55 @@
         character (len=15) :: temp_out  =  "           degc"        !! deg c        |temperature
       end type sd_hyd_header_units
       type (sd_hyd_header_units) :: sd_hyd_hdr_units
-                          
+      
+      type sol_header        
+        character (len=15) :: layer1 =  "        st_mm_1"        !!mm H2O       |plant name
+        character (len=15) :: layer2 =  "        st_mm_2"        !!mm H2O       |amt of water stored in layer 2              
+        character (len=15) :: layer3 =  "        st_mm_3"        !!mm H2O       |amt of water stored in layer 3
+        character (len=15) :: layer4 =  "        st_mm_4"        !!mm H2O       |amt of water stored in layer 4      
+        character (len=15) :: layer5 =  "        st_mm_5"        !!mm H2O       |amt of water stored in layer 5
+        character (len=15) :: layer6 =  "        st_mm_6"        !!mm H2O       |amt of water stored in layer 6 
+        character (len=15) :: layer7 =  "        st_mm_7"        !!mm H2O       |amt of water stored in layer 7
+        character (len=15) :: layer8 =  "        st_mm_8"        !!mm H2O       |amt of water stored in layer 8
+        character (len=15) :: layer9 =  "        st_mm_9"        !!mm H2O       |amt of water stored in layer 9
+        character (len=15) :: layer10 = "       st_mm_10"        !!mm H2O       |amt of water stored in layer 10
+      end type sol_header
+      type (sol_header) :: sol_hdr
+      
+      type plant_header        
+        character (len=15) :: name =  "     name        "       !!none         |plant name 
+        character (len=15) :: growing =  "growing"              !!none         |plant growing             
+        character (len=15) :: dormant =  "dormant"              !!none         |plant dormant
+        character (len=15) :: lai =  "lai"                      !!none         |leaf area index 
+        character (len=15) :: can_hgt =  "can_hgt"              !!m            |canopy height 
+        character (len=15) :: root_dep =  "root_dep"            !!m            |root depth 
+        character (len=15) :: phuacc =  "phuacc"                !!0-1          |accumulated heat units
+        character (len=15) :: tot_m =  "tot_m"                  !!kg/ha        |total biomass 
+        character (len=15) :: ab_gr_m =  "ab_gr_m"              !!kg/ha        |above ground biomass
+        character (len=15) :: leaf_m =  "leaf_m"                !!kg/ha        |leaf biomass
+        character (len=15) :: root_m =  "root_m"                !!kg/ha        |root biomass
+        character (len=15) :: stem_m = "stem_m"                 !!kg/ha        |stem biomass
+        character (len=15) :: seed_m = "seed_m"                 !!kg/ha        |seed biomass
+      end type plant_header
+      type (plant_header) :: plt_hdr
+      
+      type flood_plain_header        
+        character (len=15) :: inflo =           "        inflo"     !!m3        | inflow 
+        character (len=15) :: outflo =          "       outflo"     !!m3        | outflow             
+        character (len=15) :: dormant =         "      dormant"     !!m3        | evaporation
+        character (len=15) :: tl =              "           tl"     !!m3        | transmission losses
+        character (len=15) :: ev =              "           ev"     !!m3        | evaporation 
+        character (len=15) :: ch_stor_init =    " ch_stor_init"     !!m3        | channel storage at start of time step
+        character (len=15) :: ch_stor =         "      ch_stor"     !!m3        | channel storage at end of time step
+        character (len=15) :: fp_stor_init =    " fp_stor_init"     !!m3        | flood plain storage at start of time step (all flood plain storage above wetland emergency volume)
+        character (len=15) :: fp_stor =         "      fp_stor"     !!m3        | flood plain storage at end of time step
+        character (len=15) :: tot_stor_init =   "tot_stor_init"     !!m3        | total channel + wetland storage at start of time step
+        character (len=15) :: tot_stor =        "     tot_stor"     !!m3        | total channel + wetland storage at end of time step
+        character (len=15) :: wet_stor_init =   "wet_stor_init"     !!m3        | wetland flood plain storage at start of time step
+        character (len=15) :: wet_stor =        "     wet_stor"     !!m3        | wetland flood plain storage at end of time step
+      end type flood_plain_header
+      type (flood_plain_header) :: fp_hdr
+      
       type ch_watbod_header 
         character (len=6) :: day           = "  jday"       
         character (len=6) :: mo            = "   mon"
@@ -670,9 +736,9 @@
         character (len=9) :: id            = "         "       
         character (len=15) :: name         = "              "    
         character (len=15) :: area_ha      = '            ha'
-        character (len=15) :: precip       = '          ha-m'
-        character (len=15) :: evap         = '          ha-m'
-        character (len=15) :: seep         = '          ha-m'
+        character (len=15) :: precip       = '           m^3'
+        character (len=15) :: evap         = '           m^3'
+        character (len=15) :: seep         = '           m^3'
       end type ch_watbod_header_units
       type (ch_watbod_header_units) :: ch_wbod_hdr_units
       
@@ -719,8 +785,8 @@
         character (len=15) :: temp   =  "               "        !! deg c        |temperature
       end type hyd_header_units1
       type (hyd_header_units1) :: hyd_hdr_units1 
-      
-       type hyd_header_units1_res
+         
+      type hyd_header_units3
         character (len=15) :: flo    =  "            m^3"        !! m^3          |volume of water
         character (len=15) :: sed    =  "           tons"        !! metric tons  |sediment
         character (len=15) :: orgn   =  "            kgN"        !! kg N         |organic N
@@ -739,9 +805,9 @@
         character (len=15) :: lag    =  "           tons"        !! tons         |detached large ag
         character (len=15) :: grv    =  "           tons"        !! tons         |gravel
         character (len=15) :: temp   =  "               "        !! deg c        |temperature
-      end type hyd_header_units1_res
-      type (hyd_header_units1_res) :: hyd_hdr_units1_res
-      
+      end type hyd_header_units3
+      type (hyd_header_units3) :: hyd_hdr_units3 
+
       type hydinout_header_units1
         character (len=15) :: flo_in    =  " av daily m^3/s"        !! avg daily m^3/s        |volume of water
         character (len=15) :: flo_out   =  " av daily m^3/s"        !! avg daily m^3/s        |volume of water
@@ -866,6 +932,7 @@
         character (len=11) :: obtyp =     "ob_typ     "
         character (len=12) :: props =    "    props   "
         character (len=12) :: area  =    "    area_ha "
+        character (len=12) :: f_idx =    "  flash_idx "
         character (len=13) :: mean  =     "      mean "
         character (len=11) :: max   =     "       max "
         character (len=18) :: p01   =     "       p.1 "
@@ -1110,23 +1177,27 @@
         type (hyd_output), intent (inout) :: hyd1
         hyd1%flo = hyd1%flo
         ! ppm = 1000000. * t / m3
-        hyd1%sed = 1000000. * hyd1%sed / hyd1%flo
-        ! ppm = 1000. * kg / m3
-        hyd1%orgn = 1000. * hyd1%orgn / hyd1%flo
-        hyd1%sedp = 1000. * hyd1%sedp / hyd1%flo
-        hyd1%no3 = 1000. * hyd1%no3 / hyd1%flo
-        hyd1%solp = 1000. * hyd1%solp / hyd1%flo
-        hyd1%chla = 1000. * hyd1%chla / hyd1%flo
-        hyd1%nh3 = 1000. * hyd1%nh3 / hyd1%flo
-        hyd1%no2 = 1000. * hyd1%no2 / hyd1%flo
-        hyd1%cbod = 1000. * hyd1%cbod / hyd1%flo
-        hyd1%dox = 1000. * hyd1%dox / hyd1%flo
-        hyd1%san = 1000000. * hyd1%san / hyd1%flo
-        hyd1%sil = 1000000. * hyd1%sil / hyd1%flo
-        hyd1%cla = 1000000. * hyd1%cla / hyd1%flo
-        hyd1%sag = 1000000. * hyd1%sag / hyd1%flo
-        hyd1%lag = 1000000. * hyd1%lag / hyd1%flo
-        hyd1%grv = 1000000. * hyd1%grv / hyd1%flo
+        if (hyd1%flo > 0.01) then
+          hyd1%sed = 1000000. * hyd1%sed / hyd1%flo
+          ! ppm = 1000. * kg / m3
+          hyd1%orgn = 1000. * hyd1%orgn / hyd1%flo
+          hyd1%sedp = 1000. * hyd1%sedp / hyd1%flo
+          hyd1%no3 = 1000. * hyd1%no3 / hyd1%flo
+          hyd1%solp = 1000. * hyd1%solp / hyd1%flo
+          hyd1%chla = 1000. * hyd1%chla / hyd1%flo
+          hyd1%nh3 = 1000. * hyd1%nh3 / hyd1%flo
+          hyd1%no2 = 1000. * hyd1%no2 / hyd1%flo
+          hyd1%cbod = 1000. * hyd1%cbod / hyd1%flo
+          hyd1%dox = 1000. * hyd1%dox / hyd1%flo
+          hyd1%san = 0.  !1000000. * hyd1%san / hyd1%flo
+          hyd1%sil = 0.  !1000000. * hyd1%sil / hyd1%flo
+          hyd1%cla = 0.  !1000000. * hyd1%cla / hyd1%flo
+          hyd1%sag = 0.  !1000000. * hyd1%sag / hyd1%flo
+          hyd1%lag = 0.  !1000000. * hyd1%lag / hyd1%flo
+          hyd1%grv = 0.  !1000000. * hyd1%grv / hyd1%flo
+        else
+          hyd1 = hz
+        end if
       end subroutine hyd_convert_mass_to_conc
          
       !! routines for hydrograph module
@@ -1151,6 +1222,11 @@
         hyd3%sag = hyd1%sag + hyd2%sag
         hyd3%lag = hyd1%lag + hyd2%lag
         hyd3%grv = hyd1%grv + hyd2%grv
+        if (hyd1%flo + hyd2%flo > 1.e-6) then
+          hyd3%temp = (hyd1%flo * hyd2%temp + hyd2%flo + hyd2%temp) / (hyd1%flo + hyd2%flo)
+        else
+          hyd3%temp = 0.
+        end if
       end function hydout_add
                      
       !! routines for hydrograph module
@@ -1175,6 +1251,7 @@
         hyd3%sag = hyd1%sag - hyd2%sag
         hyd3%lag = hyd1%lag - hyd2%lag
         hyd3%grv = hyd1%grv - hyd2%grv
+        hyd3%temp = hyd1%temp
       end function hydout_subtract
             
       !! routines for hydrograph module
@@ -1199,6 +1276,7 @@
         hyd3%sag = hyd1%sag * hyd2%sag
         hyd3%lag = hyd1%lag * hyd2%lag
         hyd3%grv = hyd1%grv * hyd2%grv
+        hyd3%temp = hyd1%temp
       end function hydout_mult
             
       !! routines for hydrograph module
@@ -1223,6 +1301,7 @@
         hyd2%sag = const + hyd1%sag
         hyd2%lag = const + hyd1%lag
         hyd2%grv = const + hyd1%grv
+        hyd2%temp = hyd1%temp
       end function hydout_add_const
       
       function hydout_mult_const (const, hyd1) result (hyd2)
@@ -1247,6 +1326,7 @@
         hyd2%sag = const * hyd1%sag
         hyd2%lag = const * hyd1%lag
         hyd2%grv = const * hyd1%grv
+        hyd2%temp = hyd1%temp
       end function hydout_mult_const
       
       function hydout_div_const (hyd1,const) result (hyd2)
@@ -1270,30 +1350,104 @@
         hyd2%sag = hyd1%sag / const
         hyd2%lag = hyd1%lag / const
         hyd2%grv = hyd1%grv / const
+        hyd2%temp = hyd1%temp
       end function hydout_div_const
             
-      !function to convert m^3-> mm and kg(or t)->kg(or t)/ha
-      function hydout_div_conv (hyd1,const) result (hyd2)
+      !function to divide hyd by another hyd
+      function hydout_div_conv (hyd1, hyd2) result (hyd3)
         type (hyd_output), intent (in) :: hyd1
-        real, intent (in) :: const  !ha
-        type (hyd_output) :: hyd2
-        hyd2%flo = hyd1%flo / (10. * const)
-        hyd2%sed = hyd1%sed / const
-        hyd2%orgn = hyd1%orgn / const
-        hyd2%sedp = hyd1%sedp / const
-        hyd2%no3 = hyd1%no3 / const
-        hyd2%solp = hyd1%solp / const
-        hyd2%chla = hyd1%chla / const
-        hyd2%nh3 = hyd1%nh3 / const
-        hyd2%no2 = hyd1%no2 / const
-        hyd2%cbod = hyd1%cbod / const
-        hyd2%dox = hyd1%dox / const
-        hyd2%san = hyd1%san / const
-        hyd2%sil = hyd1%sil / const
-        hyd2%cla = hyd1%cla / const
-        hyd2%sag = hyd1%sag / const
-        hyd2%lag = hyd1%lag / const
-        hyd2%grv = hyd1%grv / const
+        type (hyd_output), intent (in) :: hyd2
+        type (hyd_output) :: hyd3
+        if (hyd2%flo > 1.e-6) then
+          hyd3%flo = hyd1%flo / hyd2%flo
+        else
+          hyd3%flo = 0.
+        end if
+        if (hyd2%sed > 1.e-6) then
+          hyd3%sed = hyd1%sed / hyd2%sed
+        else
+          hyd3%sed = 0.
+        end if
+        if (hyd2%orgn > 1.e-6) then
+          hyd3%orgn = hyd1%orgn / hyd2%orgn
+        else
+          hyd3%orgn = 0.
+        end if
+        if (hyd2%sedp > 1.e-6) then
+          hyd3%sedp = hyd1%sedp / hyd2%sedp
+        else
+          hyd3%sedp = 0.
+        end if 
+        if (hyd2%no3 > 1.e-6) then
+          hyd3%no3 = hyd1%no3 / hyd2%no3
+        else
+          hyd3%no3 = 0.
+        end if
+        if (hyd2%solp > 1.e-6) then
+          hyd3%solp = hyd1%solp / hyd2%solp
+        else
+          hyd3%solp = 0.
+        end if
+        if (hyd2%chla > 1.e-6) then
+          hyd3%chla = hyd1%chla / hyd2%chla
+        else
+          hyd3%chla = 0.
+        end if
+        if (hyd2%nh3 > 1.e-6) then
+          hyd3%nh3 = hyd1%nh3 / hyd2%nh3
+        else
+          hyd3%nh3 = 0.
+        end if
+        if (hyd2%no2 > 1.e-6) then
+          hyd3%no2 = hyd1%no2 / hyd2%no2
+        else
+          hyd3%no2 = 0.
+        end if
+        if (hyd2%cbod > 1.e-6) then
+          hyd3%cbod = hyd1%cbod / hyd2%cbod
+        else
+          hyd3%cbod = 0.
+        end if
+        if (hyd2%dox > 1.e-6) then
+          hyd3%dox = hyd1%dox / hyd2%dox
+        else
+          hyd3%dox = 0.
+        end if
+        if (hyd2%san > 1.e-6) then
+          hyd3%san = hyd1%san / hyd2%san
+        else
+          hyd3%san = 0.
+        end if
+        if (hyd2%sil > 1.e-6) then
+          hyd3%sil = hyd1%sil / hyd2%sil
+        else
+          hyd3%sil = 0.
+        end if
+        if (hyd2%cla > 1.e-6) then
+          hyd3%cla = hyd1%cla / hyd2%cla
+        else
+          hyd3%cla = 0.
+        end if
+        if (hyd2%sag > 1.e-6) then
+          hyd3%sag = hyd1%sag / hyd2%sag
+        else
+          hyd3%sag = 0.
+        end if
+        if (hyd2%lag > 1.e-6) then
+          hyd3%lag = hyd1%lag / hyd2%lag
+        else
+          hyd3%lag = 0.
+        end if
+        if (hyd2%grv > 1.e-6) then
+          hyd3%grv = hyd1%grv / hyd2%grv
+        else
+          hyd3%grv = 0.
+        end if
+        if (hyd1%flo + hyd2%flo > 1.e-6) then
+          hyd3%temp = (hyd1%flo * hyd2%temp + hyd2%flo + hyd2%temp) / (hyd1%flo + hyd2%flo)
+        else
+          hyd3%temp = 0.
+        end if
       end function hydout_div_conv
       
       !function to set dr to a constant

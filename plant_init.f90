@@ -1,6 +1,6 @@
       subroutine plant_init (init, iihru)
 
-      use hru_module, only : cn2, cvm_com, hru, ipl, isol, rsdco_plcom
+      use hru_module, only : cvm_com, hru, ipl, rsdco_plcom
       use soil_module
       use plant_module
       use hydrograph_module
@@ -23,13 +23,10 @@
       integer :: icom                !           |plant community counter
       integer :: idp                 !           |
       integer :: j                   !none       |counter
-      integer :: ilug                !none       |counter 
       integer :: iob                 !           |spatial object number
       integer :: iwgn                !           |weather generator number
       integer :: mo                  !none       |counter 
       integer :: iday                !none       |counter 
-      integer :: iplt                !none       |counter 
-      integer :: i                   !none       |counter
       integer :: icp                 !none       |counter 
       integer :: ilum                !none       |counter 
       integer :: idb                 !none       |counter 
@@ -42,8 +39,6 @@
       integer :: jday_prev           !none       |julian day of previous operation
       real :: phutot                 !heat unit  |total potential heat units for year (used
                                      !           |when no crop is growing)
-      real :: grow_start             !           |
-      real :: grow_end               !           | 
       real :: tave                   !           |
       real :: phuday                 !           |
       real :: xx                     !           |
@@ -57,7 +52,10 @@
       real :: h                      !none       |Acos(-Tan(sd)*Tan(lat))
       real :: daylength              !hours      |daylength
       real :: laimx_pop              !           |max lai given plant population
-
+      real :: matur_frac             !frac       |fraction to maturity - use hu for annuals and years to maturity for perennials
+      real :: f                      !none       |fraction of plant's maximum lai corresponding to a given fraction of phu
+      real :: dd                  !none          |relative distance of the earth from the sun
+      
       j = iihru
 
       !! allocate plants
@@ -76,6 +74,7 @@
             deallocate (pl_mass(j)%seed)
             deallocate (pl_mass(j)%root)
             deallocate (pl_mass(j)%yield_tot)
+            deallocate (pl_mass(j)%yield_yr)
             deallocate (pcom(j)%plstr) 
             deallocate (pcom(j)%plcur) 
             deallocate (rsd1(j)%tot)
@@ -93,10 +92,15 @@
         allocate (pl_mass(j)%seed(ipl))
         allocate (pl_mass(j)%root(ipl))
         allocate (pl_mass(j)%yield_tot(ipl))
+        allocate (pl_mass(j)%yield_yr(ipl))
         allocate (pcom(j)%plstr(ipl)) 
         allocate (pcom(j)%plcur(ipl)) 
         allocate (rsd1(j)%tot(ipl))
+        allocate (rsd1(j)%meta(ipl))
+        allocate (rsd1(j)%str(ipl))
+        allocate (rsd1(j)%lignin(ipl))
 
+        pcom(j)%rsd_covfac = 0.
         cvm_com(j) = 0.
         rsdco_plcom(j) = 0.
         pcom(j)%pcomdb = icom
@@ -127,7 +131,8 @@
           iday_sh = 181
 
           ! if days to maturity are not input (0) - assume the plant is potentially active during entire growing season
-          if (pldb(idp)%days_mat < 1.e-6) then
+          if (pldb(idp)%days_mat < 1.e-6 .and. pldb(idp)%days_mat > -1.e-6) then
+            ! if zero assume growing season over entire year
             phutot = 0.
             do iday = 1, 365
               call xmon (iday, mo, day_mo)
@@ -138,9 +143,14 @@
               end if
             end do
             pcom(j)%plcur(ipl)%phumat = .95 * phutot
+          else if (pldb(idp)%days_mat < 2.e-6) then
+            ! if negative assume heat units to maturity
+            pcom(j)%plcur(ipl)%phumat = -pcom(j)%plcur(ipl)%phumat
           else
+            ! if positive assume days to maturity
             ! calculate planting day for summer annuals
-            if (pldb(idp)%typ == "warm_annual" .or. pldb(idp)%typ == "warm_annual_tuber") then
+            if (pldb(idp)%typ == "warm_annual" .or. pldb(idp)%typ == "warm_annual_tuber" .or.   &
+                pldb(idp)%typ == "cold_annual" .or. pldb(idp)%typ == "cold_annual_tuber") then
               iday_sum = 181
               phutot = 0.
               phu0 = 0.15 * phu0    !assume planting at 0.15 base 0 heat units
@@ -173,8 +183,8 @@
               end do
             end if
           
-            ! caculate planting day for winter annuals at end of dormancy
-            if (pldb(idp)%typ == "cold_annual") then
+            ! switched from starting hu at dormancy (daylength) to 0.15 hu (above) like summer annuals
+            if (pldb(idp)%typ == "null" .or. pldb(idp)%typ == "null1") then
               if (wgn(iwgn)%lat > 0.) then
                 igrow = 1
               else
@@ -184,11 +194,23 @@
                 call xmon (iday, mo, day_mo)
                 tave = (wgn(iwgn)%tmpmx(mo) + wgn(iwgn)%tmpmn(mo)) / 2.
                 phuday = tave - pldb(idp)%t_base
-                if (phuday > 0.) then
-                  !exit and assume start accumulating hu when temperature goes above base temp
-                  !could switch to end of dormancy (daylength)
-                  exit
-                end if
+                !if (phuday > 0.) then
+                  !! start accumulating hu at end of dormancy (daylength)
+                  !! calculate solar declination: equation 2.1.2 in SWAT manual
+                  sd = Asin(.4 * Sin((Real(iday) - 82.) / 58.09))  !!365/2pi = 58.09
+                  !! calculate the relative distance of the earth from the sun the eccentricity of the orbit
+                  dd = 1.0 + 0.033 * Cos(Real(iday) / 58.09)
+                  sdlat = -wgn_pms(iwgn)%latsin * Tan(sd) / wgn_pms(iwgn)%latcos
+                  if (sdlat > 1.) then    !! sdlat will be >= 1. if latitude exceeds +/- 66.5 deg in winter
+                     h = 0.
+                  elseif (sdlat >= -1.) then
+                    h = Acos(sdlat)
+                  else
+                    h = 3.1416         !! latitude exceeds +/- 66.5 deg in summer
+                  endif 
+                  daylength = 7.6394 * h
+                  if (daylength - wgn_pms(iwgn)%daylth >= wgn_pms(iwgn)%daylmn) exit
+                !end if
               end do
               igrow = iday
             end if
@@ -244,45 +266,74 @@
           ! set initial rotation year for dtable scheduling
           pcom(j)%rot_yr = pcomdb(icom)%rot_yr_ini
           
-          ! set initial heat units and other data
           pcom(j)%plcur(ipl)%phuacc = pcomdb(icom)%pl(ipl)%phuacc
-          pcom(j)%plg(ipl)%laimxfr = pcom(j)%plcur(ipl)%phuacc / (pcom(j)%plcur(ipl)%phuacc +     &
+          !! set fraction to maturity and initial canopy height for annuals and perennials
+          if (pldb(idp)%typ == "perennial") then
+            matur_frac = pcomdb(icom)%pl(ipl)%fr_yrmat
+            pcom(j)%plg(ipl)%cht = matur_frac * pldb(idp)%chtmx
+          else  !annuals
+            matur_frac = pcomdb(icom)%pl(ipl)%phuacc
+            f = pcom(j)%plcur(ipl)%phuacc / (pcom(j)%plcur(ipl)%phuacc +     &
               Exp(plcp(idp)%leaf1 - plcp(idp)%leaf2 * pcom(j)%plcur(ipl)%phuacc))
-          pcom(j)%plg(ipl)%lai = pcomdb(icom)%pl(ipl)%lai
+            pcom(j)%plg(ipl)%cht = pldb(idp)%chtmx * Sqrt(f)
+          end if
+          
+          pcom(j)%plg(ipl)%laimxfr = matur_frac / (matur_frac +     &
+              Exp(plcp(idp)%leaf1 - plcp(idp)%leaf2 * matur_frac))
+          if (pcomdb(icom)%pl(ipl)%igro == "y") then
+            pcom(j)%plg(ipl)%lai = pcomdb(icom)%pl(ipl)%lai
+          else
+            pcom(j)%plg(ipl)%lai = 0.
+          end if
           pcom(j)%laimx_sum = pcom(j)%laimx_sum + pldb(idp)%blai
           pl_mass(j)%tot(ipl)%m = pcomdb(icom)%pl(ipl)%bioms
           pcom(j)%plcur(ipl)%curyr_mat = int (pcomdb(icom)%pl(ipl)%fr_yrmat * float(pldb(idp)%mat_yrs))
           pcom(j)%plcur(ipl)%curyr_mat = max (1, pcom(j)%plcur(ipl)%curyr_mat)
+          ! set total hu to maturity for perennials
+          pcom(j)%plcur(ipl)%phumat_p = pcom(j)%plcur(ipl)%phumat * pldb(idp)%mat_yrs
+            
           cvm_com(j) = plcp(idp)%cvm + cvm_com(j)
+          pcom(j)%rsd_covfac = pcom(j)%rsd_covfac + pldb(idp)%rsd_covfac
           rsdco_plcom(j) = rsdco_plcom(j) + pldb(idp)%rsdco_pl
           pcom(j)%plcur(ipl)%idplt = pcomdb(icom)%pl(ipl)%db_num
-          idp = pcom(j)%plcur(ipl)%idplt
-          pcom(j)%plm(ipl)%p_fr = (pldb(idp)%pltpfr1-pldb(idp)%pltpfr3)*        &
-          (1. - pcom(j)%plcur(ipl)%phuacc/(pcom(j)%plcur(ipl)%phuacc +          &
-           Exp(plcp(idp)%pup1 - plcp(idp)%pup2 *                                &
-           pcom(j)%plcur(ipl)%phuacc))) + pldb(idp)%pltpfr3
-          pl_mass(j)%tot(ipl)%n = pcom(j)%plm(ipl)%n_fr * pl_mass(j)%tot(ipl)%m                  
-          pcom(j)%plm(ipl)%n_fr = (pldb(idp)%pltnfr1- pldb(idp)%pltnfr3) *      &
-           (1.- pcom(j)%plcur(ipl)%phuacc/(pcom(j)%plcur(ipl)%phuacc +          &
-           Exp(plcp(idp)%nup1 - plcp(idp)%nup2 *                                &
-          pcom(j)%plcur(ipl)%phuacc))) + pldb(idp)%pltnfr3
-           pl_mass(j)%tot(ipl)%p = pcom(j)%plm(ipl)%p_fr * pl_mass(j)%tot(ipl)%m
+          
+          !! set intial n and p contents in total plant
+          pcom(j)%plm(ipl)%n_fr = (pldb(idp)%pltnfr1- pldb(idp)%pltnfr3) *              &
+             (1.- matur_frac /(matur_frac + Exp(plcp(idp)%nup1 - plcp(idp)%nup2 *       &
+             matur_frac))) + pldb(idp)%pltnfr3
+          pl_mass(j)%tot(ipl)%n = pcom(j)%plm(ipl)%n_fr * pl_mass(j)%tot(ipl)%m
+          pcom(j)%plm(ipl)%p_fr = (pldb(idp)%pltpfr1-pldb(idp)%pltpfr3)*                &
+             (1. - matur_frac / (matur_frac + Exp(plcp(idp)%pup1 - plcp(idp)%pup2 *     &
+             matur_frac))) + pldb(idp)%pltpfr3
+          pl_mass(j)%tot(ipl)%p = pcom(j)%plm(ipl)%p_fr * pl_mass(j)%tot(ipl)%m                  
+          
           if (pcom(j)%plcur(ipl)%pop_com < 1.e-6) then
             laimx_pop = pldb(idp)%blai
           else
             xx = pcom(j)%plcur(ipl)%pop_com / 1001.
-            laimx_pop = pldb(idp)%blai * xx / (xx +          &
-                    exp(pldb(idp)%pop1 - pldb(idp)%pop2 * xx))
+            laimx_pop = pldb(idp)%blai * xx / (xx + exp(pldb(idp)%pop1 - pldb(idp)%pop2 * xx))
           end if
           pcom(j)%plcur(ipl)%harv_idx = pldb(idp)%hvsti
           pcom(j)%plcur(ipl)%lai_pot = laimx_pop
           
-          !! initialize plant mass
-          call pl_root_gro(j)
-          call pl_seed_gro(j)
-          call pl_partition(j)
+          !! initialize plant mass if plant growing
+          if (pcom(j)%plcur(ipl)%gro == "y") then
+            call pl_root_gro(j)
+            call pl_seed_gro(j)
+            call pl_partition(j)
+          end if
 
         end do   ! ipl loop
+        
+        !! get average residue cover factor for community
+        if (pcom(j)%npl > 0) then
+          pcom(j)%rsd_covfac = pcom(j)%rsd_covfac / pcom(j)%npl
+          cvm_com(j) = cvm_com(j) / pcom(j)%npl
+        else
+          pcom(j)%rsd_covfac = 0.
+          cvm_com(j) = 0.
+        end if
+        
         end if   ! icom > 0
 
         ilum = hru(iihru)%land_use_mgt
@@ -317,27 +368,6 @@
             exit
           endif
         end do
-        
-        !! set parameters for structural land use/managment
-        if (lum(ilum)%tiledrain /= "null") then
-          call structure_set_parms("tiledrain       ", lum_str(ilum)%tiledrain, j)
-        end if
-      
-        if (lum(ilum)%septic /= "null") then
-          call structure_set_parms("septic          ", lum_str(ilum)%septic, j)
-        end if
-        
-        if (lum(ilum)%fstrip /= "null") then
-          call structure_set_parms("fstrip          ", lum_str(ilum)%fstrip, j)
-        end if
-        
-        if (lum(ilum)%grassww /= "null") then
-          call structure_set_parms("grassww         ", lum_str(ilum)%grassww, j)
-        end if
-
-        if (lum(ilum)%bmpuser /= "null") then
-          call structure_set_parms("bmpuser         ", lum_str(ilum)%bmpuser, j)
-        end if
-
+ 
     return
     end subroutine plant_init
