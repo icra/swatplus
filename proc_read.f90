@@ -7,6 +7,8 @@
       call cli_staread
 
       call constit_db_read
+      call poll_db_read !! ICRA read constituent database  (pollutant)
+
       call pest_metabolite_read     !! read pesticide metabolites
       call soil_plant_init
       call soil_plant_init_cs

@@ -318,12 +318,21 @@
       allocate (hcs3%hmet(cs_db%num_metals))
       allocate (hcs3%salt(cs_db%num_salts)) !rtb salt
       allocate (hcs3%cs(cs_db%num_cs)) !rtb cs
+      
+      !! ICRA allocate zero arrays for pollutants
+      allocate (hin_csz%poll(cs_db%num_poll))
+      allocate (hcs1%poll(cs_db%num_poll))
+      allocate (hcs2%poll(cs_db%num_poll))
+      allocate (hcs3%poll(cs_db%num_poll))
+
+
 
       hin_csz%pest = 0.
       hin_csz%path = 0.
       hin_csz%hmet = 0.
       hin_csz%salt = 0. !rtb salt
       hin_csz%cs = 0. !rtb cs
+      hin_csz%poll = 0.
 
       !! allocate receiving arrays
       do i = 1, sp_ob%objs

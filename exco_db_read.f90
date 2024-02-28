@@ -50,6 +50,8 @@
 
       ! read export coefficient data for all constituent types
       call exco_read_om
+      ! ICRA read export coefficient data for exco_read_poll
+      call exco_read_poll  
       if (cs_db%num_pests > 0) call exco_read_pest
       if (cs_db%num_paths > 0) call exco_read_path
       if (cs_db%num_metals > 0) call exco_read_hmet

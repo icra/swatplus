@@ -233,6 +233,8 @@
         type(print_interval) :: ru
         type(print_interval) :: pest            !!  all constituents pesticide output files (hru, chan, res, basin_chan, basin_res,
                                                 !!        basin_ls
+        type(print_interval) :: poll            !!  ICRA all constituents pollutant output files (chan, res)
+
         ! SALT (rtb salt)
         type(print_interval) :: salt_basin      !!  salt output for the basin
         type(print_interval) :: salt_hru        !!  salt output for HRUs

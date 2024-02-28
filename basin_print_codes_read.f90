@@ -142,6 +142,9 @@
      !! all pesticide outputs
         read (107,*,iostat=eof) name, pco%pest
         if (eof < 0) exit  
+      !! ICRA all pollutant outputs
+        read (107,*,iostat=eof) name, pco%poll
+        if (eof < 0) exit
 		 !! salt outputs !rtb salt
         read (107,*,iostat=eof) name, pco%salt_basin
         if (eof < 0) exit
@@ -172,6 +175,7 @@
         if (eof < 0) exit
         read (107,*,iostat=eof) name, pco%cs_wet
         if (eof < 0) exit
+
         exit
       end do
       end if

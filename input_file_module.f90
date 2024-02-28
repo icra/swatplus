@@ -186,6 +186,12 @@
        character(len=25) :: snow = "snow.sno"
       end type input_parameter_databases
       type (input_parameter_databases) :: in_parmdb
+      !! Pollutant databases
+      type input_pollutant_databases
+        character(len=25) :: pollutant_pol = "pollutants.def"
+        character(len=25) :: exco_poll = "pollutants_om.exc"
+      end type input_pollutant_databases
+      type (input_pollutant_databases) :: in_polldb
 
 !! operation scheduling
       type input_ops

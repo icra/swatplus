@@ -48,6 +48,7 @@
       integer :: day_next                !none        |counter
       integer :: tinc                    !none        |
       integer :: inext_step
+      integer :: ipoll
            
       iday = 1
       ihdmx = 2
@@ -115,6 +116,7 @@
           
           !compute all hyd"s needed for routing
           do ihtypno = 1, ob(iob)%nhyds
+
             if (ihtypno /=2) then
               !! apply dr to tot, surf, lat and tile
               ht1 = ob(iob)%hd(ihtypno) ** delrto
@@ -127,6 +129,11 @@
               do ics = 1, cs_db%num_cs !rtb cs
                 hcs1%cs(ics) = obcs(iob)%hd(ihtypno)%cs(ics)    !store constituent loads from source object
               end do
+              do ipoll = 1, cs_db%num_poll
+                hcs1%poll(ipoll) = obcs(iob)%hd(ihtypno)%poll(ipoll)
+              end do
+
+              
             else
               !! don't apply dr to recharge
               ht1 = ob(iob)%hd(ihtypno)
@@ -140,6 +147,10 @@
               do ics = 1, cs_db%num_cs !rtb cs
                 hcs1%cs(ics) = obcs(iob)%hd(ihtypno)%cs(ics)
               end do
+              do ipoll = 1, cs_db%num_poll
+                hcs1%poll(ipoll) = obcs(iob)%hd(ihtypno)%poll(ipoll)
+              end do
+
             end if
             ht1 = ef * ht1
             ob(icmd)%hd(ihtypno) = ob(icmd)%hd(ihtypno) + ht1
@@ -148,6 +159,10 @@
             do ipest = 1, cs_db%num_pests
               obcs(icmd)%hd(ihtypno)%pest(ipest) = obcs(icmd)%hd(ihtypno)%pest(ipest) + hcs1%pest(ipest)
             end do
+            do ipoll = 1, cs_db%num_poll
+              obcs(icmd)%hd(ihtypno)%poll(ipoll) = obcs(icmd)%hd(ihtypno)%poll(ipoll) + hcs1%poll(ipoll)
+            end do
+
             !rtb salt
             do isalt = 1, cs_db%num_salts 
               obcs(icmd)%hd(ihtypno)%salt(isalt) = obcs(icmd)%hd(ihtypno)%salt(isalt) + hcs1%salt(isalt) !add salt loads to routing unit object

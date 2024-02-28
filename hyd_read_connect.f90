@@ -42,6 +42,7 @@
       integer :: nsalts               !           |salts counter
       integer :: ncs                  !           |constituent counter
       integer :: aqu_found            !           |rtb gwflow
+      integer :: npolls               !           |pollutant counter
       
       eof = 0
       imax = 0
@@ -97,6 +98,15 @@
                   allocate (obcs(i)%hin_lat(1)%pest(npests))
                   allocate (obcs(i)%hin_til(1)%pest(npests))
                 end if
+
+                npolls = cs_db%num_poll
+                if (npolls > 0) then
+                  allocate (obcs(i)%hin(1)%poll(npolls))
+                  allocate (obcs(i)%hin_sur(1)%poll(npolls))
+                  allocate (obcs(i)%hin_lat(1)%poll(npolls))
+                  allocate (obcs(i)%hin_til(1)%poll(npolls))
+                end if
+
                 npaths = cs_db%num_paths
                 if (npaths > 0) then
                   allocate (obcs(i)%hin(1)%path(npaths))
@@ -178,6 +188,9 @@
                   if (npests > 0) then 
                     allocate (obcs(i)%hd(ihyd)%pest(npests))
                   end if
+                  if (npolls > 0) then 
+                    allocate (obcs(i)%hd(ihyd)%poll(npolls))
+                  end if
                   if (npaths > 0) then 
                     allocate (obcs(i)%hd(ihyd)%path(npaths))
                   end if
@@ -249,6 +262,12 @@
                       allocate (obcs(i)%hcsout_m(iout)%pest(npests))
                       allocate (obcs(i)%hcsout_y(iout)%pest(npests))
                       allocate (obcs(i)%hcsout_a(iout)%pest(npests))
+                    end if
+                    npolls = cs_db%num_poll  !ICRA
+                    if (npolls > 0) then 
+                      allocate (obcs(i)%hcsout_m(iout)%poll(npolls))
+                      allocate (obcs(i)%hcsout_y(iout)%poll(npolls))
+                      allocate (obcs(i)%hcsout_a(iout)%poll(npolls))
                     end if
                     npaths = cs_db%num_paths
                     if (npaths > 0) then 

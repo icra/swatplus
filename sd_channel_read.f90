@@ -14,6 +14,7 @@
       use pesticide_data_module
       use pathogen_data_module
       use water_body_module
+      use ch_pollutant_module !ICRA
 
       implicit none
       
@@ -79,6 +80,10 @@
       allocate (chcs_m(0:sp_ob%chandeg))
       allocate (chcs_y(0:sp_ob%chandeg))
       allocate (chcs_a(0:sp_ob%chandeg))
+      allocate (chpoll_d(0:sp_ob%chandeg))  !icra
+      allocate (chpoll_m(0:sp_ob%chandeg))  !icra
+      allocate (chpoll_y(0:sp_ob%chandeg))  !icra
+      allocate (chpoll_a(0:sp_ob%chandeg))  !icra
       
       !rtb hydrograph separation
       allocate (ch_stor_hdsep(sp_ob%chandeg))
@@ -100,6 +105,27 @@
           allocate (chpst_a(ich)%pest(cs_db%num_pests))
           allocate (ch_water(ich)%pest(cs_db%num_pests))
           allocate (ch_benthic(ich)%pest(cs_db%num_pests))
+        end do
+      end if
+      !ICRA init pollutant arrays
+      if (cs_db%num_poll > 0) then
+
+        allocate (chpoll%poll(cs_db%num_poll))
+        allocate (chpollz%poll(cs_db%num_poll))
+        allocate (bchpoll_d%poll(cs_db%num_poll))
+        allocate (bchpoll_m%poll(cs_db%num_poll))
+        allocate (bchpoll_y%poll(cs_db%num_poll))
+        allocate (bchpoll_a%poll(cs_db%num_poll))
+
+        do ich = 1, sp_ob%chandeg
+          allocate (sd_ch(ich)%aq_mix_poll(cs_db%num_poll))
+          allocate (chpoll_d(ich)%poll(cs_db%num_poll))
+          allocate (chpoll_m(ich)%poll(cs_db%num_poll))
+          allocate (chpoll_y(ich)%poll(cs_db%num_poll))   
+          allocate (chpoll_a(ich)%poll(cs_db%num_poll))
+          allocate (ch_water(ich)%poll(cs_db%num_poll))
+          allocate (ch_benthic(ich)%poll(cs_db%num_poll))
+
         end do
       end if
             

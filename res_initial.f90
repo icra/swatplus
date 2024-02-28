@@ -9,6 +9,8 @@
       use water_body_module
       use res_salt_module
       use res_cs_module
+      use pollutant_module
+      use pollutants_data_module
       
       implicit none
       
@@ -26,6 +28,12 @@
       integer :: ipath       !              |
       integer :: isalt       !              |counter for salt ions !rtb salt
       integer :: ipest_db    !none      |counter
+      integer :: num_poll     !ICRA      |counter
+      integer :: ipoll        !ICRA counter
+      integer :: irec         !ICRA counter
+      integer :: iob          !ICRA counter
+      integer :: iob_res      !ICRA counter
+      integer :: ipoll_db    !none      |counter
 
       do ires = 1, sp_ob%res
         !! set initial volumes for res and hru types
@@ -106,6 +114,16 @@
                         
           !! calculate initial surface area       
           res_wat_d(ires)%area_ha = res_ob(ires)%br1 * res(ires)%flo ** res_ob(ires)%br2
+
+          !! pollutants are initialized to 0
+          do ipoll = 1, cs_db%num_poll
+            ipoll_db = cs_db%poll_num(ipoll)
+            res_water(ires)%poll(ipoll) = 0
+            res_benthic(ires)%poll(ipoll) = 0
+            !! calculate mixing velocity using molecular weight and porosity
+            ised = res_dat(idat)%sed
+            res_ob(ires)%aq_mix_poll(ipoll) = polldb(ipoll_db)%mol_wt * (1. - res_sed(ised)%bd / 2.65)
+          end do
 
           !! initialize salts in reservoir water, from database file (salt.res)
           !rtb salt

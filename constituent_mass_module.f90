@@ -7,7 +7,7 @@
       character(len=16), dimension(:), allocatable :: hmet_init_name
       character(len=16), dimension(:), allocatable :: salt_init_name
       character(len=16), dimension(:), allocatable :: cs_init_name !rtb cs
-
+      character(len=16), dimension(:), allocatable :: poll_init_name  !ICRA
       
       type constituents
         integer :: num_tot = 0                                      !number of total constituents simulated
@@ -27,7 +27,12 @@
         integer :: num_cs = 0                                       !number of other constituents simulated
         character (len=16), dimension(:), allocatable :: cs         !name of the constituents - points to cs database
         integer, dimension(:), allocatable :: cs_num                !number of the constituents - points to salts database
-      end type constituents
+      
+        integer :: num_poll = 0                                     !number of pollutants
+        character (len=16), dimension(:), allocatable :: poll       !name of the pollutants - points to pollutants database
+        integer, dimension(:), allocatable :: poll_num              !number of the pollutants - points to pollutants database
+
+        end type constituents
       type (constituents) :: cs_db
 
       type exco_pesticide
@@ -87,6 +92,8 @@
         real, dimension (:), allocatable :: csc         !constituent concentration (mg/L)
         real, dimension (:), allocatable :: cs_sorb     !sorbed constituent mass (kg/ha)
         real, dimension (:), allocatable :: csc_sorb    !sorbed constituent concentration (mg/kg)
+        real, dimension (:), allocatable :: poll        !pollutants in hidrograph
+
       end type constituent_mass
       
       ! irrigation water constituent mass - dimensioned by hru
@@ -582,12 +589,14 @@
         type (constituent_mass), intent (in) :: hydcs1
         type (constituent_mass), intent (in) :: hydcs2
         type (constituent_mass) :: hydcs3
-        integer :: ipest, ipath, ihmet, isalt, ics
+        integer :: ipest, ipath, ihmet, isalt, ics, ipoll
         allocate (hydcs3%pest(cs_db%num_pests))
         allocate (hydcs3%path(cs_db%num_paths))
         allocate (hydcs3%hmet(cs_db%num_metals))
         allocate (hydcs3%salt(cs_db%num_salts))
         allocate (hydcs3%cs(cs_db%num_cs))
+        allocate (hydcs3%poll(cs_db%num_poll))
+
 
         do ipest = 1, cs_db%num_pests
           hydcs3%pest(ipest) =  hydcs2%pest(ipest) + hydcs1%pest(ipest)
@@ -604,6 +613,9 @@
         do ics = 1, cs_db%num_cs
           hydcs3%cs(ics) =  hydcs2%cs(ics) + hydcs1%cs(ics)
         end do
+        do ipoll = 1, cs_db%num_poll
+          hydcs3%poll(ipoll) =  hydcs2%poll(ipoll) + hydcs1%poll(ipoll)
+        end do
       return
       end function hydcsout_add
       
@@ -611,12 +623,13 @@
         type (constituent_mass), intent (in) :: hydcs1
         type (constituent_mass) :: hydcs2
         real, intent (in) :: const
-        integer :: ipest, ipath, ihmet, isalt, ics
+        integer :: ipest, ipath, ihmet, isalt, ics, ipoll
         allocate (hydcs2%pest(cs_db%num_pests))
         allocate (hydcs2%path(cs_db%num_paths))
         allocate (hydcs2%hmet(cs_db%num_metals))
         allocate (hydcs2%salt(cs_db%num_salts))
         allocate (hydcs2%cs(cs_db%num_cs)) !rtb cs
+        allocate (hydcs2%poll(cs_db%num_poll))
 
         do ipest = 1, cs_db%num_pests
           hydcs2%pest(ipest) =  const * hydcs1%pest(ipest)
@@ -633,6 +646,11 @@
         do ics = 1, cs_db%num_cs !rtb cs
           hydcs2%cs(ics) =  const * hydcs1%cs(ics)
         end do
+
+        do ipoll = 1, cs_db%num_poll
+          hydcs2%poll(ipoll) =  const * hydcs1%poll(ipoll)
+        end do
+
         return
       end function hydcsout_mult_const
       

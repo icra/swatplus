@@ -17,6 +17,7 @@
       use ch_cs_module !rtb cs
       use gwflow_module, only: flood_freq !rtb gwflow
       use ch_pesticide_module               !!!  nbs added 7-20-23
+      use ch_pollutant_module !ICRA
       
       implicit none     
     
@@ -93,6 +94,7 @@
       real :: salt_conc(8)            !kg            |salt concentration in channel water
       real :: cs_conc(8)              !kg            |constituent concentration in channel water
       real :: bf_flow                 !m3/s          |bankfull flow rate * adjustment factor
+      integer :: ipoll                !none          |pollutant counter
       ich = isdch
       isd_db = sd_dat(ich)%hyd
       iwst = ob(icmd)%wst
@@ -400,7 +402,7 @@
         !! Peters latest channel erosion model
         !!vel = 1.37 * (sd_ch(ich)%chs ** 0.31) * (12. * sd_ch(ich)%chw) ** 0.32      !annual ave for SWIFT
         !! mean daily to peak ratio developed from GARDAY - THE STUDY OF MOST PROBABLE MEAN DAILY BANKFULL RUNOFF VOLUMES 
-        !! IN SMALL WATERSHEDS DOMINATED BY CONVECTIVE/FRONTAL CHANNEL FORMING EVENTS AND THE CO-INCIDENT INNER BERM CHANNELS – PART I. 
+        !! IN SMALL WATERSHEDS DOMINATED BY CONVECTIVE/FRONTAL CHANNEL FORMING EVENTS AND THE CO-INCIDENT INNER BERM CHANNELS ï¿½ PART I. 
         !! Another eq from Peter - Qmax=Qmean*(1+2.66*Drainage Area^-.3)
         pk_rto = 0.2 + 0.5 / 250. * ob(icmd)%area_ha
         pk_rto = amin1 (1., pk_rto)
@@ -527,6 +529,7 @@
         !! call mike winchell's new routine for pesticide routing
         ! call ch_rtpest2
         call ch_rtpath
+        call ch_rtpoll
       end if
       
       end if    ! peakrate > 0
@@ -543,6 +546,10 @@
       
       !! add precip
       ht2%flo = ht2%flo + ch_wat_d(ich)%precip
+
+      if(cs_db%num_tot > 0) then
+        hcs2 = hcs1 !set outflow to inflow
+      end if
       
       !salt and constituent concentrations (g/m3) for inflow water
       if(cs_db%num_salts > 0 .or. cs_db%num_cs > 0) then
@@ -630,7 +637,7 @@
       ch_stor(ich) = ht3 - ht2    !incoming + initial storage - outflow
         
       !salt, constituent mass
-      if(cs_db%num_salts > 0 .or. cs_db%num_cs > 0) then
+      if(cs_db%num_salts > 0 .or. cs_db%num_cs > 0 .or. cs_db%num_poll .or. cs_db%num_pests ) then
         hcs3 = hcs2 + ch_water(ich) !incoming + storage
       endif
       
@@ -726,6 +733,14 @@
           ch_water(ich)%cs(ics) = hcs3%cs(ics) - hcs2%cs(ics)
         enddo
       endif
+
+      !channel pollutant updates
+      if(cs_db%num_poll > 0) then
+        do ipoll=1,cs_db%num_poll
+          hcs2%poll(ipoll) = scoef * hcs3%poll(ipoll)
+          ch_water(ich)%poll(ipoll) = hcs3%poll(ipoll) - hcs2%poll(ipoll)
+        enddo
+      endif
       
       !ht2 = ob(icmd)%hd(1)  !! reset ht2 for printing
       ob(icmd)%hd(1)%temp = 5. + .75 * wst(iwst)%weat%tave
@@ -734,6 +749,10 @@
       
       if (cs_db%num_pests > 0) then
         obcs(icmd)%hd(1)%pest = hcs2%pest
+      end if
+
+      if (cs_db%num_poll > 0) then
+        obcs(icmd)%hd(1)%poll = hcs2%poll
       end if
       if (cs_db%num_salts > 0) then !rtb salt
         obcs(icmd)%hd(1)%salt = hcs2%salt
@@ -784,6 +803,23 @@
         chpst_d(isdch)%pest(ipest)%water = ch_water(ich)%pest(ipest)
         chpst_d(isdch)%pest(ipest)%benthic = ch_benthic(ich)%pest(ipest)
       end do
+
+      !! ICRA set pollutant output variables
+      do ipoll = 1, cs_db%num_poll
+        chpoll_d(isdch)%poll(ipoll)%tot_in = obcs(icmd)%hin(1)%poll(ipoll)
+        chpoll_d(isdch)%poll(ipoll)%sol_out = poll_frsol * obcs(icmd)%hd(1)%poll(ipoll)
+        chpoll_d(isdch)%poll(ipoll)%sor_out = poll_frsrb * obcs(icmd)%hd(1)%poll(ipoll)
+        chpoll_d(isdch)%poll(ipoll)%react = chpoll%poll(ipoll)%react
+        chpoll_d(isdch)%poll(ipoll)%volat = chpoll%poll(ipoll)%volat
+        chpoll_d(isdch)%poll(ipoll)%settle = chpoll%poll(ipoll)%settle
+        chpoll_d(isdch)%poll(ipoll)%resus = chpoll%poll(ipoll)%resus
+        chpoll_d(isdch)%poll(ipoll)%difus = chpoll%poll(ipoll)%difus
+        chpoll_d(isdch)%poll(ipoll)%react_bot = chpoll%poll(ipoll)%react_bot
+        chpoll_d(isdch)%poll(ipoll)%bury = chpoll%poll(ipoll)%bury 
+        chpoll_d(isdch)%poll(ipoll)%water = ch_water(ich)%poll(ipoll)
+        chpoll_d(isdch)%poll(ipoll)%bury = ch_benthic(ich)%poll(ipoll)
+
+      end do
       
       !rtb salt - set salt output variables
       do isalt = 1, cs_db%num_salts
@@ -808,7 +844,7 @@
 				else
           chcs_d(ich)%cs(ics)%conc = 0.
 				endif
-      enddo
+      end do
       
         
       !! set values for recharge hydrograph - should be trans losses

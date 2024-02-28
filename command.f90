@@ -74,10 +74,10 @@
           ob(icmd)%hin_til = hz
           ht1 = hz
           if (cs_db%num_tot > 0 .and. obcs_alloc(icmd).eq.1) then
-            obcs(icmd)%hin = hin_csz
-            obcs(icmd)%hin_sur = hin_csz
-            obcs(icmd)%hin_lat = hin_csz
-            obcs(icmd)%hin_til = hin_csz
+            obcs(icmd)%hin(1) = hin_csz
+            obcs(icmd)%hin_sur(1) = hin_csz
+            obcs(icmd)%hin_lat(1) = hin_csz
+            obcs(icmd)%hin_til(1) = hin_csz
           endif
           hcs1 = hin_csz
           hcs2 = hin_csz
@@ -387,7 +387,7 @@
             do iout = 1, ob(icmd)%src_tot
               ihtyp = ob(icmd)%ihtyp_out(iout)
               ht1 = ob(icmd)%frac_out(iout) * ob(icmd)%hd(ihtyp)
-              call hydout_output (iout)
+              call hydout_output (iout)  
             end do
           end if
         end if
@@ -488,7 +488,8 @@
           call sd_chanmorph_output (jrch)
           call sd_channel_output (jrch)
           if (cs_db%num_tot > 0) then 
-            call cha_pesticide_output (jrch)   
+            call cha_pesticide_output (jrch)  
+            call cha_pollutant_output (jrch) 
             !call ch_pathogen_output (jrch)
           end if   
           if (cs_db%num_salts > 0) then !rtb salt
@@ -507,6 +508,7 @@
           call reservoir_output(j)
          if (cs_db%num_tot > 0) then 
             call res_pesticide_output (j)
+            call res_pollutant_output (j) !ICRA
             if (cs_db%num_salts > 0) then !rtb salt
               call res_salt_output (j)
 						endif

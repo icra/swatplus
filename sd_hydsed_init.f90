@@ -7,6 +7,8 @@
       use hydrograph_module
       use constituent_mass_module
       use pesticide_data_module
+      use pollutants_data_module 
+      use pollutant_module
       
       implicit none      
 
@@ -26,6 +28,11 @@
       integer :: idat
       integer :: i_dep                  !none      |counter
       integer :: icha
+      integer :: num_poll !ICRA counter
+      integer :: ipoll    !ICRA counter
+      integer :: iob_ch  !ICRA counter
+      integer :: ipoll_db               !ICRA      |counter
+      character(len=16) :: poll_name   !!          ICRA      |pollutant name
       integer :: isalt
       integer :: ics
       
@@ -59,6 +66,7 @@
       real :: rto          !none              |ratio of channel volume to total volume
       real :: rto1         !none              |ratio of flood plain volume to total volume
       real :: sumc         !none              |sum of Muskingum coefficients
+      integer :: irec         !ICRA
       
       do i = 1, sp_ob%chandeg
         icmd = sp_ob1%chandeg + i - 1
@@ -228,6 +236,21 @@
         fp_om_water_init(ich) = fp_stor(ich)
       end do
       
+      ! initialize pollutants to 0
+      do ich = 1, sp_ob%chandeg
+        iob = sp_ob1%chandeg + ich - 1
+        ichdat = ob(iob)%props
+        ich_ini = sd_dat(ichdat)%init
+        do ipoll = 1, cs_db%num_poll
+          ipoll_db = cs_db%poll_num(ipoll)
+          ch_water(ich)%poll(ipoll) = 0
+          ch_benthic(ich)%poll(ipoll) = 0
+          !! calculate mixing velocity using molecular weight and porosity
+          sd_ch(ich)%aq_mix_poll(ipoll) = polldb(ipoll_db)%mol_wt ** (-.6666) * (1. - sd_ch(ich)%ch_bd / 2.65) * (69.35 / 365)
+        end do
+      end do
+      num_poll = cs_db%num_poll
+
       ! initialize pesticides in channel water and benthic from input data
       do ich = 1, sp_ob%chandeg
         iob = sp_ob1%chandeg + ich - 1

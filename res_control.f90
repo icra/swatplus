@@ -134,6 +134,9 @@
         !! perform reservoir pesticide transformations
         call res_pest (jres)
 
+        !! ICRA perform reservoir pollutants transformations
+        call res_poll (jres)
+
         !! perform reservoir salt process (rtb salt)
         if(cs_db%num_salts > 0) then
           call res_salt(jres)
@@ -152,6 +155,11 @@
         ob(icmd)%hin_tot = ob(icmd)%hin_tot + ob(icmd)%hin     
         !! total outgoing to output to SWIFT
         ob(icmd)%hout_tot = ob(icmd)%hout_tot + ht2
+
+        !! set pollutants for routing
+        if (cs_db%num_poll > 0) then
+          obcs(icmd)%hd(1)%poll = hcs2%poll
+        end if
         
         if (time%step > 1) then
           do ii = 1, time%step
@@ -173,6 +181,8 @@
       else
         !! reservoir has not been constructed yet
         ob(icmd)%hd(1) = ob(icmd)%hin
+        obcs(icmd)%hd(1) = obcs(icmd)%hin(1) !ICRA
+
       end if
 
   !!!! for Luis only    
