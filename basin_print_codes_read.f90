@@ -40,13 +40,13 @@
      !! read database output
         read (107,*,iostat=eof) header
         if (eof < 0) exit
-        read (107,*,iostat=eof) pco%csvout, pco%carbout, pco%cdfout
+        read (107,*,iostat=eof) pco%csvout, pco%dbout, pco%cdfout
         if (eof < 0) exit
         
      !! read other output
         read (107,*,iostat=eof) header
         if (eof < 0) exit
-        read (107,*,iostat=eof) pco%crop_yld, pco%mgtout, pco%hydcon, pco%fdcout
+        read (107,*,iostat=eof) pco%snutc, pco%mgtout, pco%hydcon, pco%fdcout
         if (eof < 0) exit
              
      !! read objects output
@@ -83,13 +83,13 @@
         read (107,*,iostat=eof) name, pco%aqu_reg
         if (eof < 0) exit            
         read (107,*,iostat=eof) name, pco%res_reg
-        if (eof < 0) exit                           
+        if (eof < 0) exit        
+        read (107,*,iostat=eof) name, pco%chan_reg
+        if (eof < 0) exit                       
         read (107,*,iostat=eof) name, pco%sd_chan_reg
         if (eof < 0) exit 
         read (107,*,iostat=eof) name, pco%recall_reg
         if (eof < 0) exit 
-        read (107,*,iostat=eof) name, pco%water_allo
-        if (eof < 0) exit   
     !! lsu
         read (107,*,iostat=eof) name, pco%wb_lsu
         if (eof < 0) exit     
@@ -141,37 +141,11 @@
         if (eof < 0) exit 
      !! all pesticide outputs
         read (107,*,iostat=eof) name, pco%pest
+        if (eof < 0) exit 
+      !! ICRA all pollutant outputs
+        read (107,*,iostat=eof) name, pco%poll
         if (eof < 0) exit  
-		 !! salt outputs !rtb salt
-        read (107,*,iostat=eof) name, pco%salt_basin
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%salt_hru
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%salt_ru
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%salt_aqu
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%salt_chn
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%salt_res
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%salt_wet
-        if (eof < 0) exit
-      !! constituent outputs !rtb cs
-        read (107,*,iostat=eof) name, pco%cs_basin
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%cs_hru
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%cs_ru
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%cs_aqu
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%cs_chn
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%cs_res
-        if (eof < 0) exit
-        read (107,*,iostat=eof) name, pco%cs_wet
-        if (eof < 0) exit
+ 
         exit
       end do
       end if

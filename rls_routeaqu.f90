@@ -9,7 +9,7 @@
 !!    name        |units         |definition
 !!    ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ 
 !!
-      use hru_module, only : ihru
+      use hru_module, only : ihru, hru
       use soil_module
       use hydrograph_module
       use organic_mineral_mass_module

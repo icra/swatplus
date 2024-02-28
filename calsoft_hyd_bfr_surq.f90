@@ -19,6 +19,8 @@
       
       implicit none
       
+      integer :: iter_all      !none      |counter
+      integer :: iterall       !none      |counter
       integer :: isim          !          |
       integer :: ireg          !none      |counter
       integer :: ilum          !none      |counter
@@ -26,11 +28,18 @@
       integer :: icn           !none      |counter
       integer :: ihru_s        !none      |counter
       integer :: iter_ind      !          |end of loop
+      integer :: ietco         !none      |counter
+      integer :: ik            !none      |counter
+      integer :: nly           !          |end of loop
+      integer :: iperco        !none      |counter
       real :: rmeas            !          |
       real :: denom            !          |
       real :: soft             !          |
       real :: diff             !          |
-      real :: chg_val          !          |  
+      real :: rto              !          |
+      real :: chg_val          !          | 
+      real :: dep_below_soil   !          |  
+      real :: perc_ln_func
 
       ! calibrate cn3_swf for surface runoff
         iter_ind = 1
@@ -97,7 +106,6 @@
         ! 1st cn3_swf adjustment 
         if (isim > 0) then
           cal_sim =  " first cn3_swf adj "
-          cal_adj = chg_val
           call time_control
         end if
 
@@ -114,7 +122,7 @@
             
                 rmeas = lscal(ireg)%lum(ilum)%meas%srr * lscal(ireg)%lum(ilum)%precip_aa
                 denom = lscal(ireg)%lum(ilum)%prev%srr - lscal(ireg)%lum(ilum)%aa%srr
-                if (abs(denom) > 1.) then
+                if (abs(denom) > .0001) then
                   chg_val = - (lscal(ireg)%lum(ilum)%prm_prev%cn3_swf - lscal(ireg)%lum(ilum)%prm%cn3_swf)                  &
                     * (lscal(ireg)%lum(ilum)%aa%srr - rmeas) / denom
                 else
@@ -167,7 +175,6 @@
         ! cn3_swf adjustment
         if (isim > 0) then
           cal_sim =  " cn3_swf adj "
-          cal_adj = chg_val
           !pco%wb_hru%a = "y"
           !if (icn == 2) pco%wb_hru%d = "y"
           call time_control

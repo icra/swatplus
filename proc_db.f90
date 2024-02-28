@@ -12,6 +12,7 @@
       call urban_parm_read                          !! read the urban land types database
       call path_parm_read                           !! read the pathogen data parameters
       call septic_parm_read 
+      call poll_parm_read                           !! ICRA read the pollutant data parameters
       
       !! read management scheduling and data files      
       call mgt_read_irrops
@@ -21,7 +22,6 @@
       call mgt_read_sweepops
       call mgt_read_fireops
       call mgt_read_mgtops
-      call mgt_read_puddle
       
       !! read structural operations files
       call sdr_read

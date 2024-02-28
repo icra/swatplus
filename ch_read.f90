@@ -21,7 +21,9 @@
       integer :: ihyd                   !none          |counter
       integer :: ised                   !none          |counter
       integer :: inut                   !none          |counter
+      integer :: ipst                   !none          |counter
       
+
       eof = 0
       imax = 0
 

@@ -73,6 +73,7 @@
       real :: rh            !m             |hydraulic radius
       real :: volrt         !units         |description 
       real :: maxrt         !units         |description 
+      real :: dddep         !units         |description 
       real :: addp          !units         |description 
       real :: addarea       !units         |description 
       real :: vc            !m/s           |flow velocity in reach

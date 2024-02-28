@@ -9,6 +9,8 @@
 !!    idg(:)      |none        |array location of random number seed
 !!                             |used for a given process
 !!    ihru        |none        |HRU number
+!!    ovrlnd(:)   |mm H2O      |overland flow onto HRU from upstream
+!!                             |routing unit
 !!    rndseed(:,:)|none        |random number generator seed
 !!    snomlt      |mm H2O      |amount of snow melt in HRU on current day
 !!    tconc(:)    |hr          |time of concentration
@@ -29,12 +31,13 @@
 
 !!    ~ ~ ~ SUBROUTINES/FUNCTIONS CALLED ~ ~ ~
 !!    Intrinsic: Log, Log10
+!!    SWAT: Expo, Atri
 
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
 
       use climate_module
       use hydrograph_module
-      use hru_module, only : hru, usle_ei, usle_eifac, ihru,   &
+      use hru_module, only : hru, usle_ei, usle_eifac, ovrlnd, ihru, iwgen, qp_cms, snomlt,  &
         usle_ei, usle_eifac
       
       implicit none

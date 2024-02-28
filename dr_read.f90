@@ -10,6 +10,7 @@
       character (len=80) :: header    !           |header of file
       integer :: eof                  !           |end of file
       logical :: i_exist              !none       |check to determine if file exists
+      character (len=16) :: namedum   !           |  
       integer :: imax                 !           |
       integer :: mdr_sp               !           |ending of loop 
       integer :: ii                   !none       |counter

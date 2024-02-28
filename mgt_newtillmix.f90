@@ -31,7 +31,6 @@
       use hru_module, only: tillage_days, tillage_depth, tillage_switch
       use soil_module
       use constituent_mass_module
-      use plant_module
       
       implicit none
 
@@ -42,12 +41,12 @@
       integer :: k                     !none           |counter
       integer :: kk                    !               |
       integer :: npmx                  !               |
-      integer :: ipl
       !CB 12/2/09 nl and a are not used.
       real :: emix                     !none           |mixing efficiency
       real :: dtil                     !mm             |depth of mixing
       real :: frac_mixed               !               |
       real :: frac_non_mixed           !               |
+      real :: maxmix                   !none           | maximum mixing eff to preserve specified minimum residue cover
       !!by zhang
       !!=============   
       real :: smix(22+cs_db%num_pests+12)         !varies         |amount of substance in soil profile
@@ -60,7 +59,6 @@
       real :: sol_msm(soil(jj)%nly)     !              |sol_mass mixed
       real :: sol_msn(soil(jj)%nly)     !              |sol_mass not mixed 
       real :: frac_dep(soil(jj)%nly)    !              |fraction of soil layer in tillage depth
-      real :: frac1, frac2
 
       npmx = cs_db%num_pests
 
@@ -107,19 +105,10 @@
 
       smix = 0.
 
-      !! incorporate fraction of residue in first and second layer stable humus pool
-      frac1 = emix * soil(jj)%phys(1)%d / dtil
-      frac2 = emix * (1. - soil(jj)%phys(1)%d / dtil)
-      do ipl = 1, pcom(jj)%npl  
-        soil1(jj)%hsta(1) = frac1 * rsd1(jj)%tot(ipl) + soil1(jj)%hsta(1)
-        soil1(jj)%hsta(2) = frac2 * rsd1(jj)%tot(ipl) + soil1(jj)%hsta(2)
-        rsd1(jj)%tot(ipl) = (1. - emix) * rsd1(jj)%tot(ipl)
-      end do 
-      
       if (dtil > 0.) then
-        ! added by Armen 09/10/2010 next line only
-        if (dtil < 10.0) dtil = 11.0
-        do l = 1, soil(jj)%nly
+    ! added by Armen 09/10/2010 next line only
+    if (dtil < 10.0) dtil = 11.0
+	 do l = 1, soil(jj)%nly
 
           if (soil(jj)%phys(l)%d <= dtil) then
             !! msm = mass of soil mixed for the layer

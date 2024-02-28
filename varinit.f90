@@ -57,11 +57,10 @@
       use time_module
       use hru_module, only : hhqday, ihru, albday,                                      &
         bioday, bsprev, canev, ep_day, ep_max, es_day, fertn, fertp, grazn, grazp,      &
-        hhsedy, inflpcp, latqrunon, ls_overq, lyrtile, qp_cms,                          &
+        hhsedy, inflpcp, latqrunon, ls_overq, lyrtile, qp_cms, w_stress,                & !LVerdura: add w_stress
         pet_day, qday, qtile, sepday, snoev, snofall, snomlt,                           &
         sw_excess, ubnrunoff, ubntss, uno3d, usle, usle_ei, voltot, vpd, fixn 
       use soil_module
-      use hydrograph_module
       
       implicit none
 
@@ -99,7 +98,7 @@
         fixn = 0.
         grazn = 0.
         grazp = 0.
-        if (time%step > 1)  hhqday(j,:) = 0.
+        if (time%step > 0)  hhqday(j,:) = 0.
         inflpcp = 0.
         lyrtile = 0.
         qp_cms = 0.
@@ -121,16 +120,13 @@
         voltot = 0.
 
 	!! urban modeling by J.Jeong
-	  sedprev = 0.
-	  ubnrunoff = 0.
-	  irmmdt = 0.
+	    sedprev = 0.
+	    ubnrunoff = 0.
+	    irmmdt = 0.
         hhsedy = 0.
         ubntss = 0.
-        wet_seep_day(j)%no3 = 0
-        wet_seep_day(j)%nh3 = 0
-        wet_seep_day(j)%orgn =0
-        wet_seep_day(j)%solp =0
-        wet_seep_day(j)%sedp =0
+        
+        w_stress = 1. !LVerdura
 
        return
        end subroutine varinit

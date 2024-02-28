@@ -40,7 +40,7 @@
       use basin_module
       use hydrograph_module
       use climate_module
-      use hru_module, only : hru, ihru, albday, ipl, pet_day, vpd, ep_max
+      use hru_module, only : hru, ihru, albday, epmax, ipl, pet_day, vpd, ep_max
       use plant_module
       
       implicit none
@@ -70,7 +70,7 @@
       real :: rv                   !s/m           |aerodynamic resistance to sensible heat and
                                    !              |vapor transfer
       real :: rn_pet               !MJ/m2         |net radiation for continuous crop cover 
-      real :: fvpd                 !kPa           |amount of vapor pressure deficit over 
+      real :: fvpd                 !kPa           |amount of vapro pressure deficit over 
                                    !              |threshold value
       real :: rc                   !s/m           |canopy resistance
       real :: rho                  !MJ/(m3*kPa)   |K1*0.622*xl*rho/pb
@@ -142,6 +142,7 @@
           pet_alpha = 1.28
           pet_day = pet_alpha * (dlt / (dlt + gma)) * rn_pet / xl
           pet_day = Max(0., pet_day)
+          pet_day = bsn_prm%petco_pmpt * pet_day
 
        case (1)   !! PENMAN-MONTEITH POTENTIAL EVAPOTRANSPIRATION METHOD
 
@@ -180,9 +181,11 @@
 
            !! potential ET: reference crop alfalfa at 40 cm height
            rv = 114. / (w%windsp * (170./1000.)**0.2)
-           rc = 49. / (1.4 - 0.4 * co2y(time%yrs) / 330.)
+           rc = 49. / (1.4 - 0.4 * bsn_prm%co2 / 330.)
            pet_day = (dlt * rn_pet + gma * rho * vpd / rv) / (xl * (dlt + gma * (1. + rc / rv)))
+
            pet_day = Max(0., pet_day)
+           pet_day = bsn_prm%petco_pmpt * pet_day
  
         !! maximum plant ET
           igrocom = 0
@@ -244,7 +247,7 @@
           
             !! calculate canopy resistance
             rc = 1. / (gsi_adj + 0.01)           !single leaf resistance
-            rc = rc / (0.5 * (pcom(j)%lai_sum + 0.01) * (1.4 - 0.4 * co2y(time%yrs) / 330.))
+            rc = rc / (0.5 * (pcom(j)%lai_sum + 0.01) * (1.4 - 0.4 * bsn_prm%co2 / 330.))
 
             !! calculate maximum plant ET
             ep_max = (dlt * rn + gma * rho * vpd / rv) / (xl * (dlt + gma * (1. + rc / rv)))
@@ -260,7 +263,7 @@
         ramm = w%solradmx  * 37.59 / 30. 
 
         if (w%tmax > w%tmin) then
-         pet_day = 0.0023 * (ramm / xl) * (w%tave + 17.8) * (w%tmax - w%tmin)**0.5
+         pet_day = hru(j)%hyd%harg_pet * (ramm / xl) * (w%tave + 17.8) * (w%tmax - w%tmin)**0.5
          pet_day = Max(0., pet_day)
         else
           pet_day = 0.
@@ -272,8 +275,6 @@
         pet_day = wst(iwst)%weat%pet
   
       end select
-       
-      pet_day = hru(j)%hyd%pet_co * pet_day
 
       return
       end subroutine et_pot

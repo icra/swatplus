@@ -4,13 +4,10 @@
       use constituent_mass_module
       use input_file_module
       use maximum_data_module
-
-      implicit none
  
       character (len=80) :: titldum, header
       integer :: eof, imax
       logical :: i_exist              !none       |check to determine if file exists
-      integer :: ii
 
       eof = 0
       
@@ -50,10 +47,20 @@
 
       ! read export coefficient data for all constituent types
       call exco_read_om
+      
+      ! ICRA read export coefficient data for exco_read_poll
+      call exco_read_poll  
+
+
+
       if (cs_db%num_pests > 0) call exco_read_pest
       if (cs_db%num_paths > 0) call exco_read_path
       if (cs_db%num_metals > 0) call exco_read_hmet
       if (cs_db%num_salts > 0) call exco_read_salt
+
+
+
+
       
       return
       end subroutine exco_db_read

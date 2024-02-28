@@ -19,7 +19,6 @@
       real, dimension (:), allocatable :: rnd8                  !none          |random number between 0.0 and 1.0
       real, dimension (:), allocatable :: rnd9                  !none          |random number between 0.0 and 1.0
       integer :: rndseed_cond = 748932582   ! random number seed for dtbl conditional
-      real, dimension(:), allocatable :: co2y
 
       type weather_generator_db      
         real :: lat =  0.0                          !! degrees      |latitude of weather station used to compile data
@@ -65,7 +64,7 @@
         integer, dimension (:), allocatable :: mne_ppet          !!none          |next element in precip-pet linked list
         real, dimension (:), allocatable :: precip_mce           !!mm            |precip on current day of 30 day list 
         real, dimension (:), allocatable :: pet_mce              !!mm            |pet on current day of 30 day list 
-        integer :: ireg = 1                     !!               |annual precip category-1 <= 508 mm; 2 > 508 and <= 1016 mm; 3 > 1016 mm/yr
+        integer :: ireg = 0                     !!               |annual precip category-1 <= 508 mm; 2 > 508 and <= 1016 mm; 3 > 1016 mm/yr
         integer :: idewpt = 0                   !!               |0=dewpoint; 1=rel humididty input
       end type wgn_parms
       type (wgn_parms), dimension(:),allocatable :: wgn_pms
@@ -107,7 +106,7 @@
         integer :: sgage = 0      !!  gage number for solar radiation (sim if generating) 
         integer :: hgage = 0      !!  gage number for relative humidity (sim if generating)
         integer :: wgage = 0      !!  gage number for windspeed (sim if generating)
-        integer :: petgage = 0      !!  number of pet gage files used in sim
+        integer :: wndir = 0      !!  number of wind direction gage (.dir) files used in sim
         integer :: atmodep = 0    !!  atmospheric depostion data file locator
       end type weather_codes_station
       
@@ -119,7 +118,7 @@
         character (len=50) :: sgage = ""      !!  gage name for solar radiation
         character (len=50) :: hgage = ""      !!  gage name for relative humidity
         character (len=50) :: wgage = ""      !!  gage name for windspeed
-        character (len=50) :: petgage = ""    !!  name of pet gage ?
+        character (len=50) :: wndir = ""      !!  name of wind direction gage (.dir) files used in sim
         character (len=50) :: atmodep = ""    !!  atmospheric depostion data file locator
       end type weather_codes_station_char
 
@@ -129,16 +128,11 @@
         type (weather_codes_station_char) :: wco_c
         type (weather_codes_station) :: wco 
         type (weather_daily) :: weat
-        real :: precip_aa = 0.              ! mm         |average annual precipitation
-        real :: pet_aa = 0.                 ! mm         |average annual potential ET
         integer :: pcp_ts = 0               ! 1/day      |precipitation time steps per day (0 or 1 = daily)
         real, dimension(12) :: rfinc = 0    ! deg C      |monthly precipitation adjustment
         real, dimension(12) :: tmpinc = 0   ! deg C      |monthly temperature adjustment
         real, dimension(12) :: radinc = 0   ! MJ/m^2     |monthly solar radiation adjustment
         real, dimension(12) :: huminc = 0   ! none       |monthly humidity adjustment
-        real, dimension(:), allocatable :: tlag     ! deg C      |daily average temperature for channel temp lag
-        real :: airlag_temp                 ! deg C      |average temperature w_temp%airlag_d days ago
-        integer :: tlag_mne = 1             !            |next element (day) for the air temp linked list
       end type weather_station
       type (weather_station), dimension(:),allocatable :: wst
          
@@ -184,8 +178,7 @@
       type (climate_measured_data), dimension(:), allocatable :: tmp    
       type (climate_measured_data), dimension(:), allocatable :: slr
       type (climate_measured_data), dimension(:), allocatable :: hmd
-      type (climate_measured_data), dimension(:), allocatable :: wnd
-      type (climate_measured_data), dimension(:), allocatable :: petm
+      type (climate_measured_data), dimension(:), allocatable :: wnd 
       
       type atmospheric_deposition
         real :: nh4_rf = 1.         !! ave annual ammonia in rainfall - mg/l
@@ -215,35 +208,6 @@
       end type atmospheric_deposition_control
       type (atmospheric_deposition_control), save :: atmodep_cont
       
-      !rtb salt / rtb cs
-      logical :: salt_atmo,cs_atmo
-      type atmospheric_deposition_cs
-        real :: rf                                  !! concentration in rainfall - mg/l
-        real :: dry                                 !! dry deposition - kg/ha/yr
-        real, dimension(:), allocatable :: rfmo
-        real, dimension(:), allocatable :: drymo
-        real, dimension(:), allocatable :: rfyr
-        real, dimension(:), allocatable :: dryyr 
-      end type atmospheric_deposition_cs
-      type object_deposition_cs
-        type (atmospheric_deposition_cs), dimension (:), allocatable :: salt
-        type (atmospheric_deposition_cs), dimension (:), allocatable :: cs
-      end type object_deposition_cs
-      type (object_deposition_cs), dimension (:), allocatable :: atmodep_salt
-      type (object_deposition_cs), dimension (:), allocatable :: atmodep_cs
-      
-      !rtb salt
-      type road_salt
-        real :: road                                 !! ave annual salt ion loading via road salt application (kg/ha)
-        real, dimension(:,:), allocatable :: roadday !! daily salt ion loading via road salt application (kg/ha)
-        real, dimension(:), allocatable :: roadmo    !! monthly salt ion loading via road salt application (kg/ha)
-        real, dimension(:), allocatable :: roadyr    !! yearly salt ion loading via road salt application (kg/ha)
-      end type road_salt
-      type object_road_salt
-        type (road_salt), dimension (:), allocatable :: salt
-      end type object_road_salt
-      type (object_road_salt), dimension (:), allocatable :: rdapp_salt !applied road salt
-      
       character(len=50), dimension(:), allocatable :: wst_n
       character(len=50), dimension(:), allocatable :: wgn_n
       character(len=50), dimension(:), allocatable :: pcp_n
@@ -251,7 +215,6 @@
       character(len=50), dimension(:), allocatable :: slr_n
       character(len=50), dimension(:), allocatable :: hmd_n
       character(len=50), dimension(:), allocatable :: wnd_n   
-      character(len=50), dimension(:), allocatable :: atmo_n
-      character(len=50), dimension(:), allocatable :: petm_n
+      character(len=50), dimension(:), allocatable :: atmo_n       
           
       end module climate_module

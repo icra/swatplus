@@ -1,6 +1,6 @@
       subroutine calsoft_hyd_bfr_latq
 
-      use hru_module, only : hru, hru_init
+      use hru_module, only : cn2, hru, hru_init
       use soil_module
       use plant_module
       use hydrograph_module
@@ -19,18 +19,27 @@
       
       implicit none
       
+      integer :: iter_all      !none      |counter
+      integer :: iterall       !none      |counter
       integer :: isim          !          |
       integer :: ireg          !none      |counter
       integer :: ilum          !none      |counter
       integer :: iihru         !none      |counter
+      integer :: icn           !none      |counter
       integer :: ihru_s        !none      |counter
       integer :: iter_ind      !          |end of loop
+      integer :: ietco         !none      |counter
       integer :: ik            !none      |counter
+      integer :: nly           !          |end of loop
+      integer :: iperco        !none      |counter
       real :: rmeas            !          |
       real :: denom            !          |
       real :: soft             !          |
       real :: diff             !          |
-      real :: chg_val          !          |  
+      real :: rto              !          |
+      real :: chg_val          !          | 
+      real :: dep_below_soil   !          |  
+      real :: perc_ln_func
 
       ! calibrate lateral flow
         iter_ind = 1
@@ -98,7 +107,6 @@
         ! 1st latq_co adjustment 
         if (isim > 0) then
           cal_sim =  " first latq_co adj "
-          cal_adj = chg_val
           call time_control
         end if
 
@@ -115,7 +123,7 @@
             
                 rmeas = lscal(ireg)%lum(ilum)%meas%lfr * lscal(ireg)%lum(ilum)%precip_aa
                 denom = lscal(ireg)%lum(ilum)%prev%lfr - lscal(ireg)%lum(ilum)%aa%lfr
-                if (abs(denom) > 1.) then
+                if (abs(denom) > 1.e-6) then
                   chg_val = - (lscal(ireg)%lum(ilum)%prm_prev%lat_len - lscal(ireg)%lum(ilum)%prm%lat_len)                  &
                     * (lscal(ireg)%lum(ilum)%aa%lfr - rmeas) / denom
                 else
@@ -164,7 +172,6 @@
         ! latq_co adjustment for lateral soil flow
         if (isim > 0) then
           cal_sim =  " latq_co adj "
-          cal_adj = chg_val
           call time_control
         end if
         end do  

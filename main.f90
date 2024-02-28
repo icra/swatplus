@@ -9,27 +9,18 @@
       
       integer :: date_time(8)           !              |
       character*10 b(3)                 !              |
-    
-      prog = " SWAT+ Feb 15 2024        MODULAR Rev 2024.61.0"
+      
+      prog = " SWAT+ Apr 8 2022    MODULAR Rev 2020.60.5.4"
 
       write (*,1000)
       open (9003,file='simulation.out')
       write (9003,1000)
  1000 format(1x,"                  SWAT+               ",/,             &
-     &          "             Revision 61.0            ",/,             &
+     &          "             Revision 60.5.4          ",/,             &
      &          "      Soil & Water Assessment Tool    ",/,             &
      &          "               PC Version             ",/,             &
      &          "    Program reading . . . executing",/)
-      
-      open (888,file="erosion.txt",recl = 1500)
-      
- !!!! for Luis only
- !     open (7777,file='res1_out.txt',recl=1500)
- !     write (7777,7778) 
-!7778  format (9x,'DAY',8x,'YEAR',10x,'RES',7x,'VOL m^3',4x,'INFLO m^3',5x,'OUTFLO m^3',5x,'PREC m^3',7x,'EVAP m^3',  &
-!        8x,'AREA ha')
- !!!! for Luis only
-      
+
       call proc_bsn   
       call proc_date_time
       call proc_db
@@ -41,12 +32,12 @@
       
       call cli_lapse
       call object_read_output
+      call water_rights_read
 
       call om_water_init
       call pest_cha_res_read
       call path_cha_res_read
-      call salt_cha_read !rtb salt
-      call cs_cha_read !rtb cs
+      call salt_cha_res_read
 
       call lsu_read_elements        !defining landscape units by hru
 
@@ -60,31 +51,23 @@
       call hru_lte_read
 
       call proc_cond
-
-      call res_read_weir !moved from proc_res Jaehak 2023
       call dtbl_res_read
       call dtbl_scen_read
       ! input scenarios used in simulation
       call cal_cond_read
             
-      ! read manure allocation inputs
-      call manure_allocation_read
-      
       call dtbl_flocon_read
-            
-      ! read water treatment and water allocation files - before hru lum tables
-      call treat_read_om
-      call water_allocation_read
-      
       call hru_dtbl_actions_init
-      
+            
       ! read reservoir and wetland data
       call proc_res
       call wet_read_hyd
       call wet_read
-      call wet_read_salt_cs
-      if (db_mx%wet_dat > 0) call wet_all_initial
+      if (db_mx%wet_dat > 0) call wet_initial
       if (bsn_cc%i_fpwet == 2) call wet_fp_init
+      
+      ! read water allocation file
+      call water_allocation_read
       
       call proc_cal
       
@@ -116,9 +99,6 @@
         call cal_parmchg_read
         call calhard_control
       end if
-      
-      !! write output for SWIFT input
-      if (bsn_cc%swift_out == 1) call swift_output
            
       !! write successful completion to screen and file
       write (*,1001)

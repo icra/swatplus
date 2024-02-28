@@ -43,6 +43,7 @@
       
       integer :: j                               !none          |HRU number
       integer :: k                               !none          |counter
+      integer :: kk                              !hour          |hour of day in which runoff is generated
       real :: adj_hc                             !mm/hr         |adjusted hydraulic conductivity
       real :: dthet                              !mm/mm         |initial moisture deficit
       real :: soilw                              !mm H2O        |amount of water in soil profile
@@ -51,6 +52,7 @@
       real :: tst                                !mm H2O        |test value for cumulative infiltration
       real :: f1                                 !mm H2O        |test value for cumulative infiltration
       integer :: ulu
+      real :: abstinit
       real, dimension (time%step) :: cuminf    !mm H2O        |cumulative infiltration for day
       real, dimension (time%step) :: cumr      !mm H2O        |cumulative rainfall for day
       real, dimension (time%step) :: excum     !mm H2O        |cumulative runoff for day

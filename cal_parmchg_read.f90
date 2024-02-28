@@ -14,6 +14,9 @@
 
 !!    ~ ~ ~ OUTGOING VARIABLES ~ ~ ~
 !!    name        |units         |definition
+!!    ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+!!    chg_par     |variable      |new parameter value
+!!    ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
       
@@ -97,8 +100,6 @@
             select case (cal_parms(ipar)%ob_typ)
             case ("hru")
               cal_upd(i)%num_elem = sp_ob%hru
-            case ("rdt")
-              cal_upd(i)%num_elem = db_mx%dtbl_res
             case ("plt")
               cal_upd(i)%num_elem = sp_ob%hru
             case ("lyr")

@@ -31,6 +31,7 @@
 !!    fps         |none          |change in horizontal distance per unit
 !!                               |change in vertical distance on floodplain side
 !!                               |slopes; always set to 4 (slope=1/4)
+!!    jj          |none          |counter
 !!    k           |none          |dummy argument (HRU number)
 !!    p           |m             |wetting perimeter
 !!    qq1         |m^3/s         |flow rate for a specified depth
@@ -52,6 +53,7 @@
       implicit none
 
       integer, intent (in) :: k  !none          |dummy argument (HRU number)
+      integer :: jj              !none          |counter
       real :: fps                !none          |change in horizontal distance per unit
                                  !              |change in vertical distance on floodplain side
                                  !              |slopes; always set to 4 (slope=1/4)

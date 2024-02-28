@@ -41,7 +41,11 @@
       
       implicit none      
       
-      integer :: j           !none          |HRU number  
+      integer :: j           !none          |HRU number
+      integer :: k           !none          |counter
+      integer :: icmd        !              |  
+      integer :: ipst_db     !              |  
+
 
       j = ihru
 

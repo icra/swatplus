@@ -32,6 +32,7 @@
       
       implicit none
  
+      integer :: icn     !none          |counter
       integer :: j       !none          |HRU number
       real :: r2         !none          |retention parameter in CN equation
       real :: sw_fac     !none          |variable used to store intermediate value of soil water factor

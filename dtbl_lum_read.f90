@@ -18,6 +18,7 @@
                   
       character (len=80) :: titldum   !           |title of file
       character (len=80) :: header    !           |header of file
+      character (len=13) :: file
       integer :: eof                  !           |end of file
       integer :: i                    !none       |counter 
       integer :: mdtbl                !none       |ending of loop
@@ -26,6 +27,7 @@
       integer :: iac                  !none       !counter 
       logical :: i_exist              !none       |check to determine if file exists
       integer :: idb                  !none       |counter
+      integer :: ilum                 !none       |counter
       integer :: iburn                !none       |counter
       integer :: ihru                 !none       |counter
       
@@ -92,7 +94,6 @@
             if (eof < 0) exit
             do iac = 1, dtbl_lum(i)%acts
               read (107,*,iostat=eof) dtbl_lum(i)%act(iac), (dtbl_lum(i)%act_outcomes(iac,ial), ial = 1, dtbl_lum(i)%alts)
-              dtbl_lum(i)%act(iac)%const2 = Max (1., dtbl_lum(i)%act(iac)%const2)
               if (eof < 0) exit
             end do
 
@@ -164,33 +165,7 @@
                       exit
                     endif
                   end do
-                          
-                case ("fert_future")
-                  !xwalk fert name with fertilizer data base
-                  do idb = 1, db_mx%fertparm
-                    if (dtbl_lum(i)%act(iac)%option == fertdb(idb)%fertnm) then
-                      dtbl_lum(i)%act_typ(iac) = idb
-                      exit
-                    endif
-                  end do
-                  !xwalk application type with chemical application data base
-                  do idb = 1, db_mx%chemapp_db
-                    if (dtbl_lum(i)%act(iac)%file_pointer == chemapp_db(idb)%name) then
-                      dtbl_lum(i)%act_app(iac) = idb
-                      exit
-                    endif
-                  end do
-                            
-                case ("manure_demand")
-                  !fert name with manure allocation source object
-                  !xwalk application type with chemical application data base
-                  do idb = 1, db_mx%chemapp_db
-                    if (dtbl_lum(i)%act(iac)%option == chemapp_db(idb)%name) then
-                      dtbl_lum(i)%act_app(iac) = idb
-                      exit
-                    endif
-                  end do
-                                      
+                                        
                 case ("pest_apply")
                   !xwalk fert name with fertilizer data base
                   do idb = 1, cs_db%num_pests
@@ -212,14 +187,6 @@
                   do idb = 1, db_mx%grazeop_db
                     if (dtbl_lum(i)%act(iac)%option == grazeop_db(idb)%name) then
                       dtbl_lum(i)%act_typ(iac) = idb
-                    end if
-                  end do
-                  
-                case ("puddle")
-                  do idb = 1, db_mx%pudl_db
-                    if (dtbl_lum(i)%act(iac)%option == pudl_db(idb)%name) then
-                      dtbl_lum(i)%act_typ(iac) = idb
-                      exit
                     end if
                   end do
                   

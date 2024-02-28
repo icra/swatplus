@@ -64,6 +64,8 @@
       real :: sedtrap                !              | 
       real :: xrem                   !              | 
       integer :: k                   !m^3/s         |Total number of HRUs plus this HRU number
+      integer :: icmd                !              |
+      
       
 !!	set variables
       j = ihru

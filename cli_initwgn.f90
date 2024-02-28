@@ -96,6 +96,8 @@
       real :: r6                            !none          |variable to hold calculation result
       real :: xlv                           !none          |variable to hold calculation results
       real, dimension (12) :: rain_hhsm     !mm            |smoothed values for maximum 0.5 hour rainfall 
+      real :: tmpsoil                       !deg C         |initial temperature of soil layers
+      real :: sffc                          !              |
       real :: rndm1                         !none          |random number between 0.0 and 1.0
       real :: dl                            !hour          |time threshold used to define dormant
                                             !              |period for plant (when daylength is within
@@ -294,13 +296,8 @@
       end do
 
       !! determine precipitation category (ireg initialized to category 1)
-      if (summm_p < 508.) then
-        wgn_pms(iwgn)%ireg = 1
-      else if (summm_p >= 508. .and. summm_p < 1016.) then
-        wgn_pms(iwgn)%ireg = 2
-      else if (summm_p >= 1016.) then
-        wgn_pms(iwgn)%ireg = 3
-      end if
+      if (summm_p > 508.) wgn_pms(iwgn)%ireg = 2
+      if (summm_p > 1016.) wgn_pms(iwgn)%ireg = 3
 
       return
       end subroutine cli_initwgn

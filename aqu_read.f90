@@ -2,7 +2,7 @@
       
        use input_file_module
        use aquifer_module
-       use basin_module !rtb gwflow
+       use gwflow_module !rtb gwflow
        use maximum_data_module
        
        implicit none
@@ -59,7 +59,7 @@
           close (107)
           exit
           
-          bsn_cc%gwflow = 0 ! rtb set gwflow module flag to 0
+          gwflow_flag = 0 ! rtbset gwflow module flag to 0
        enddo
        endif
           

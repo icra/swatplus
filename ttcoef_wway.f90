@@ -1,4 +1,4 @@
-      subroutine ttcoef_wway(k)     
+      subroutine ttcoef_wway     
 !!    ~ ~ ~ PURPOSE ~ ~ ~
 !!    this subroutine computes travel time coefficients for routing
 !!    along the main channel - grassed waterways
@@ -24,11 +24,12 @@
 !!    SWAT: Qman
 
 !!    ~ ~ ~ ~ ~ ~ END SPECIFICATIONS ~ ~ ~ ~ ~ ~
-      use hru_module, only : hru
+      use hru_module, only : hru, ihru
       use channel_velocity_module
       
       implicit none
        
+      integer :: jj             !none          |counter
       integer :: k              !none          |dummy argument (HRU number)
       real :: fps               !none          |change in horizontal distance per unit
                                 !              |change in vertical distance on floodplain side
@@ -47,7 +48,10 @@
                                 !              |change in vertical distance on channel side
                                 !              |slopes; always set to 2 (slope=1/2) 
       real :: qman              !m^3/s or m/s  |flow rate or flow velocity
+      integer :: j              !none          |hru number
       
+      k = ihru
+
       aa = 1.
       b = 0.
       d = 0.
@@ -116,8 +120,8 @@
       qq1 = Qman(a, rh, hru(k)%lumv%grwat_n, hru(k)%lumv%grwat_s)
       tt1 = hru(k)%lumv%grwat_l * a / qq1
       grwway_vel(k)%vel_1bf = Qman(aa, rh, hru(k)%lumv%grwat_n, hru(k)%lumv%grwat_s)
-      grwway_vel(k)%celerity_1bf = grwway_vel(k)%vel_1bf * 5. / 3.
-      grwway_vel(k)%stor_dis_1bf = hru(k)%lumv%grwat_l / grwway_vel(k)%celerity_1bf / 3.6
+      grwway_vel(k)%celerity_1bf = grwway_vel(j)%vel_1bf * 5. / 3.
+      grwway_vel(j)%stor_dis_1bf = hru(k)%lumv%grwat_l / grwway_vel(k)%celerity_1bf / 3.6
 
       return
       end

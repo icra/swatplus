@@ -23,7 +23,7 @@
       use basin_module
       use organic_mineral_mass_module
       use hydrograph_module
-      use hru_module, only : hru, ihru 
+      use hru_module, only : hru, ihru, timest 
       use climate_module
       use output_landscape_module
       

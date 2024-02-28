@@ -38,7 +38,7 @@
       use calibration_data_module
       use plant_data_module
       use mgt_operations_module
-      use hru_module, only : hru, ihru, ipl, phubase, yr_skip
+      use hru_module, only : hru, ihru, ipl, phubase, yr_skip, timest
       use plant_module
       use time_module
       use climate_module
@@ -55,6 +55,9 @@
       use water_allocation_module
       
       implicit none
+      
+      !rtb floodplain
+      !integer :: flood_count
 
       integer :: j                   !none          |counter
       integer :: julian_day          !none          |counter
@@ -72,9 +75,15 @@
       real :: sno_init
       integer :: iob                 !              |
       integer :: curyr               !              |
-      integer :: mo                  !              |
-      integer :: day_mo              !              |
-      integer :: iwallo, imallo
+      integer :: iwgn                !              |
+      integer :: ipg                 !              |
+      integer :: ireg                !              |
+      integer :: ilu                 !              |
+      integer :: mo                    !           |
+      integer :: day_mo                !           |
+      integer :: iwallo
+
+      integer :: day_index !rtb gwflow
       
       time%yrc = time%yrc_start
       
@@ -93,10 +102,10 @@
       call cli_precip_control (0)
 
       do curyr = 1, time%nbyr
-    !!!!!  uncomment next three lines for RELEASE version only (Srin/Karim)
+    !!!!!  uncomment next two lines for RELEASE version only (Srin/Karim)
           !call DATE_AND_TIME (b(1), b(2), b(3), date_time)
           !write (*,1235) cal_sim, time%yrc
-    !1235  format (1x, a, 2x, i4)
+    !1235 format (1x, a, 2x, i4)
           
         time%yrs = curyr
 
@@ -222,7 +231,7 @@
             !if (upd_cond(iupd)%num_hits < upd_cond(iupd)%max_hits) then
             !  upd_cond(iupd)%num_hits = upd_cond(iupd)%num_hits + 1
               !! all hru fractions are set at once
-              if (upd_cond(iupd)%typ == "basin") then
+              if (upd_cond(iupd)%typ == "hru_fr_change") then
                 call conditions (j, id)
                 call actions (j, iob, id)
               end if
@@ -245,15 +254,15 @@
             end do
           end if
 
-          !! allocate manure to appropriate demand objects
-          if (db_mx%mallo_db > 0) then
-            do imallo = 1, db_mx%mallo_db
-              call mallo_control (imallo)
-            end do
-          end if
-          
+          !rtb floodplain
+          !flood_freq = 0
+
           call command              !! command loop 
           
+          !rtb floodplain - output array of floodplain flags
+          !write(5555,1235) (flood_freq(flood_count),flood_count=1,2407)
+
+        
           ! reset base0 heat units and yr_skip at end of year for southern hemisphere
           ! near winter solstace (winter solstice is around June 22)
           if (time%day == 181) then
@@ -344,6 +353,7 @@
               if (pldb(idp)%typ == "perennial") then
                 pcom(j)%plcur(ipl)%curyr_mat = pcom(j)%plcur(ipl)%curyr_mat + 1
                 pcom(j)%plcur(ipl)%curyr_mat = Min(pcom(j)%plcur(ipl)%curyr_mat,pldb(idp)%mat_yrs)
+                pcom(j)%plcur(ipl)%curyr_gro = pcom(j)%plcur(ipl)%curyr_gro + 1
               end if
             end if
           end do
@@ -364,13 +374,15 @@
           end if
         end do      
 
-        !! update simulation year
-        time%yrc = time%yrc + 1
+      !! update simulation year
+      time%yrc = time%yrc + 1
       end do            !!     end annual loop
+     
+      !! write output for SWIFT input
+      !if (bsn_cc%swift_out == 1) call swift_output
       
       !! ave annual calibration output and reset time for next simulation
       call calsoft_ave_output
-      yrs_print = time%yrs_prt
       time = time_init
 
       return

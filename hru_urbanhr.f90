@@ -56,6 +56,8 @@
       
       implicit none
 
+      real :: cod          !kg            |carbonaceous biological oxygen demand of 
+                           !              |surface runoff from urban area
       real :: sus_sol      !kg            |suspended solid loading in surface runoff
                            !              |from urban area
       real :: tn           !kg            |total nitrogen in surface runoff from

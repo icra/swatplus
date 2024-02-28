@@ -29,6 +29,7 @@
       integer :: k        !none          |counter
       integer :: ipest_db !none          |pesticide number from database
       real :: pest_init   !kg/ha         |amount of pesticide in soil
+      integer :: icmd     !              | 
 
       j = ihru
 

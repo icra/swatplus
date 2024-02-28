@@ -25,8 +25,7 @@
       type input_cli
        character(len=25) :: weat_sta = "weather-sta.cli"
        character(len=25) :: weat_wgn = "weather-wgn.cli"
-       character(len=25) :: pet_cli = "pet.cli"
-       !character(len=25) :: wind_dir = "wind-dir.cli"
+       character(len=25) :: wind_dir = "wind-dir.cli"
        character(len=25) :: pcp_cli = "pcp.cli"
        character(len=25) :: tmp_cli = "tmp.cli"
        character(len=25) :: slr_cli = "slr.cli"
@@ -141,9 +140,9 @@
       
 !! water-rights
       type input_water_rights
-        character(len=25) :: transfer_wro = "water_allocation.wro"  !! transferring water using water rights objects (using decision tables)
+        character(len=25) :: transfer_wro = "transfer.wro"      !! transferring water using water rights objects (using decision tables)
         character(len=25) :: element = "element.wro"
-        character(len=25) :: water_rights = "water_rights.wro"      !! 2 sources and compensation (used for NAM)
+        character(len=25) :: water_rights = "water_rights.wro"  !! 2 sources and compensation (used for NAM)
       end type input_water_rights
       type (input_water_rights) :: in_watrts
       
@@ -187,6 +186,13 @@
       end type input_parameter_databases
       type (input_parameter_databases) :: in_parmdb
 
+      !! Pollutant databases
+      type input_pollutant_databases
+        character(len=25) :: pollutant_pol = "pollutants.def"
+        character(len=25) :: exco_poll = "pollutants_om.exc"
+      end type input_pollutant_databases
+      type (input_pollutant_databases) :: in_polldb
+      
 !! operation scheduling
       type input_ops
        character(len=25) :: harv_ops = "harv.ops"
@@ -278,34 +284,29 @@
       type (input_regions) :: in_regs
       
       type input_path_pcp
-        character(len=80) :: pcp = " "  
+        character(len=50) :: pcp = " "  
       end type input_path_pcp
       type (input_path_pcp) :: in_path_pcp
       
      type input_path_tmp
-        character(len=80) :: tmp = " "  
+        character(len=50) :: tmp = " "  
       end type input_path_tmp
       type (input_path_tmp) :: in_path_tmp
       
      type input_path_slr
-        character(len=80) :: slr = " "  
+        character(len=50) :: slr = " "  
       end type input_path_slr
       type (input_path_slr) :: in_path_slr
            
      type input_path_hmd
-        character(len=80) :: hmd = " "  
+        character(len=50) :: hmd = " "  
       end type input_path_hmd
       type (input_path_hmd) :: in_path_hmd
       
      type input_path_wnd
-        character(len=80) :: wnd = " "  
+        character(len=50) :: wnd = " "  
       end type input_path_wnd
       type (input_path_wnd) :: in_path_wnd
-      
-    type input_path_pet
-        character(len=80) :: peti = " "  
-      end type input_path_pet
-      type (input_path_pet) :: in_path_pet
       
       contains
 

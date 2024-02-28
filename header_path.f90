@@ -2,6 +2,7 @@
     
      use basin_module
      use reservoir_module
+     use hydrograph_module, only : res, sp_ob
      use output_ls_pathogen_module
      use constituent_mass_module
      implicit none 

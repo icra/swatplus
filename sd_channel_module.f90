@@ -9,31 +9,33 @@
       real, dimension(:), allocatable :: trav_time  !days       |time spent in each hydrograph time step
       real, dimension(:), allocatable :: flo_dep    !m^2        |hydraulic radius for each hydrograph time step
       real, dimension(:), allocatable :: timeint    !days       |time spent in each hydrograph time step
+      !integer, dimension(:), allocatable :: flood_freq        !rtb floodplain
+
       
       type swatdeg_hydsed_data
-        character(len=25) :: name
+        character(len=16) :: name
         character(len=16) :: order
-        real :: chw = 0.            !m          |channel width
-        real :: chd = 0.            !m          |channel depth
-        real :: chs = 0.            !m/m        |channel slope
-        real :: chl = 0.            !km         |channel length
-        real :: chn = 0.            !           |channel Manning's n
-        real :: chk = 0.            !mm/h       |channel bottom conductivity
-        real :: cherod = 0.         !           |channel erodibility
-        real :: cov = 0.            !0-1        |channel cover factor
-        real :: sinu                !none       |sinuousity - ratio of channel length and straight line length
-        real :: chseq = 0.          !m/m        |equilibrium channel slope
-        real :: d50 = 0.            !mm         |channel median sediment size
-        real :: ch_clay = 0.        !%          |clay percent of bank and bed
-        real :: carbon = 0.         !%          |carbon percent of bank and bed
-        real :: ch_bd = 0.          !t/m3       |dry bulk density
-        real :: chss = 0.           !           |channel side slope
-        real :: bankfull_flo = 0.   !           |bank full flow rate
-        real :: fps = 0.000001      !m/m        |flood plain slope
-        real :: fpn = 0.1           !           |flood plain Manning's n
-        real :: n_conc = 0.         !mg/kg      |nitrogen concentration in channel bank
-        real :: p_conc = 0.         !mg/kg      |phosphorus concentration in channel bank
-        real :: p_bio = 0.          !frac       |fraction of p in bank that is bioavailable
+        real :: chw = 0.        !m          |channel width
+        real :: chd = 0.        !m          |channel depth
+        real :: chs = 0.        !m/m        |channel slope
+        real :: chl = 0.        !km         |channel length
+        real :: chn = 0.        !           |channel Manning's n
+        real :: chk = 0.        !mm/h       |channel bottom conductivity
+        real :: cherod = 0.     !           |channel erodibility
+        real :: cov = 0.        !0-1        |channel cover factor
+        real :: wd_rto = 0.     !0.5-100    |width depth ratio
+        real :: chseq = 0.      !m/m        |equilibrium channel slope
+        real :: d50 = 0.        !mm         |channel median sediment size
+        real :: ch_clay = 0.    !%          |clay percent of bank and bed
+        real :: carbon = 0.     !%          |cabon percent of bank and bed
+        real :: ch_bd = 0.      !t/m3       |dry bulk density
+        real :: chss = 0.       !           |channel side slope
+        real :: bedldcoef = 0.  !           |percent of sediment entering the channel that is bed material
+        real :: fps = 0.000001  !m/m        |flood plain slope
+        real :: fpn = 0.1       !           |flood plain Manning's n
+        real :: n_conc = 0.     !mg/kg      |nitrogen concentration in channel bank
+        real :: p_conc = 0.     !mg/kg      |phosphorus concentration in channel bank
+        real :: p_bio = 0.      !frac       |fraction of p in bank that is bioavailable
       end type swatdeg_hydsed_data
       type (swatdeg_hydsed_data), dimension (:), allocatable :: sd_chd
       
@@ -51,8 +53,7 @@
         integer :: pest = 1                 !points to initial pesticide input file
         integer :: path = 1                 !points to initial pathogen input file
         integer :: hmet = 1                 !points to initial heavy metals input file
-        integer :: salt = 1                 !points to initial salt input file (salt_channel.ini) (rtb salt)
-        integer :: cs = 1                   !points to initial constituent input file (cs_channel.ini) (rtb cs)
+        integer :: salt = 1                 !points to initial salt input file
       end type swatdeg_init_datafiles
       type (swatdeg_init_datafiles), dimension(:), allocatable :: sd_init
             
@@ -104,14 +105,14 @@
         real :: chn             !           |channel Manning's n
         real :: chk             !mm/h       |channel bottom conductivity
         real :: cov             !0-1        |channel cover factor
-        real :: sinu            !none       |sinuousity - ratio of channel length and straight line length
+        real :: wd_rto          !0.5-100    |width depth ratio
         real :: chseq           !m/m        |equilibrium channel slope
         real :: d50
         real :: ch_clay
         real :: carbon
         real :: ch_bd
         real :: chss
-        real :: bankfull_flo
+        real :: bedldcoef
         real :: fps
         real :: fpn
         real :: hc_kh = 0.
@@ -130,6 +131,7 @@
         type (floodplain_parameters) :: fp
         real, dimension (:), allocatable :: kd      !           |aquatic mixing velocity (diffusion/dispersion)-using mol_wt
         real, dimension (:), allocatable :: aq_mix  ! m/day     |aquatic mixing velocity (diffusion/dispersion)-using mol_wt
+        real, dimension (:), allocatable :: aq_mix_poll  ! m/day     |ICRA aquatic mixing velocity (diffusion/dispersion)-using mol_wt
         character (len=2) :: overbank               !           |"ib"=in bank; "ob"=overbank flood
       end type swatdeg_channel_dynamic
       type (swatdeg_channel_dynamic), dimension (:), allocatable :: sd_ch
@@ -208,7 +210,7 @@
           character (len=6) :: yrc        =  "    yr"
           character (len=8) :: isd        =  "   unit "
           character (len=8) :: id         =  " gis_id "           
-          character (len=16) :: name      =  " name          "         
+          character (len=16) :: name      =  " name          "        
           character(len=16) :: flo_in     =  "         flo_in"        ! (m^3/s)
           character(len=16) :: aqu_in     =  "         geo_bf"        ! (m^3/s)
           character(len=16) :: flo        =  "        flo_out"        ! (m^3/s)
@@ -234,7 +236,7 @@
       end type sdch_header
       type (sdch_header) :: sdch_hdr
       
-      type sdch_header_units
+     type sdch_header_units
           character (len=6) :: day        =  "      "
           character (len=6) :: mo         =  "      "
           character (len=6) :: day_mo     =  "      "
@@ -265,33 +267,7 @@
           character(len=16) :: flo_mm     =  "             mm"        ! (mm) 
           character(len=16) :: sed_stor   =  "           tons"        ! (tons)
       end type sdch_header_units
-      type (sdch_header_units) :: sdch_hdr_units   
-      
-      type sdch_header_sub
-          character (len=6) :: day        =  "  jday"
-          character (len=6) :: mo         =  "   mon"
-          character (len=6) :: day_mo     =  "   day"
-          character (len=6) :: yrc        =  "    yr"
-          character (len=8) :: isd        =  "   unit "
-          character (len=8) :: id         =  " gis_id " 
-          character (len=8) :: ii         =  "  tstep "
-          character (len=16) :: name      =  " name          "        
-          character(len=16) :: hyd_flo    =  "        flo_out"        ! (m^3/s)
-      end type sdch_header_sub
-      type (sdch_header_sub) :: sdch_hdr_subday
-  
-      type sdch_header_units_sub
-          character (len=6) :: day        =  "      "
-          character (len=6) :: mo         =  "      "
-          character (len=6) :: day_mo     =  "      "
-          character (len=6) :: yrc        =  "      "
-          character (len=8) :: isd        =  "        "
-          character (len=8) :: id         =  "        " 
-          character (len=8) :: ii         =  "        "
-          character (len=16) :: name      =  "              "         
-          character (len=16) :: hyd_flo   =  "        m^3/s   "        ! (m^3/s)
-      end type sdch_header_units_sub
-      type (sdch_header_units) :: sdch_hdr_units_sub
+      type (sdch_header_units) :: sdch_hdr_units
      
       interface operator (+)
         module procedure chsd_add
@@ -332,9 +308,9 @@
        cho3%deg_btm = cho1%deg_btm + cho2%deg_btm
        cho3%deg_bank = cho1%deg_bank + cho2%deg_bank
        cho3%hc_sed = cho1%hc_sed + cho2%hc_sed
-       cho3%width = cho2%width
-       cho3%depth = cho2%depth
-       cho3%slope = cho2%slope
+       cho3%width = cho1%width + cho2%width
+       cho3%depth = cho1%depth + cho2%depth
+       cho3%slope = cho1%slope + cho2%slope
        cho3%deg_btm_m = cho1%deg_btm_m + cho2%deg_btm_m
        cho3%deg_bank_m = cho1%deg_bank_m + cho2%deg_bank_m
        cho3%hc_m = cho1%hc_m + cho2%hc_m
@@ -343,36 +319,8 @@
        cho3%flo_mm = cho1%flo_mm + cho2%flo_mm
        cho3%sed_stor = cho1%sed_stor + cho2%sed_stor
       end function
-       
-      function chsd_div (ch1,const) result (ch2)
-        type (sd_ch_output), intent (in) :: ch1
-        real, intent (in) :: const
-        type (sd_ch_output) :: ch2
-        ch2%flo_in = ch1%flo_in / const
-        ch2%aqu_in = ch1%aqu_in / const
-        ch2%flo = ch1%flo / const
-        ch2%peakr = ch1%peakr / const
-        ch2%sed_in = ch1%sed_in
-        ch2%sed_out = ch1%sed_out
-        ch2%washld = ch1%washld
-        ch2%bedld = ch1%bedld
-        ch2%dep = ch1%dep
-        ch2%deg_btm = ch1%deg_btm
-        ch2%deg_bank = ch1%deg_bank
-        ch2%hc_sed = ch1%hc_sed
-        ch2%width = ch1%width
-        ch2%depth = ch1%depth
-        ch2%slope = ch1%slope
-        ch2%deg_btm_m = ch1%deg_btm_m
-        ch2%deg_bank_m = ch1%deg_bank_m
-        ch2%hc_m = ch1%hc_m
-        ch2%flo_in_mm = ch1%flo_in_mm
-        ch2%aqu_in_mm = ch1%aqu_in_mm
-        ch2%flo_mm = ch1%flo_mm
-        ch2%sed_stor = ch1%sed_stor / const
-      end function chsd_div
       
-      function chsd_ave (ch1,const) result (ch2)
+      function chsd_div (ch1,const) result (ch2)
         type (sd_ch_output), intent (in) :: ch1
         real, intent (in) :: const
         type (sd_ch_output) :: ch2
@@ -391,15 +339,43 @@
         ch2%width = ch1%width
         ch2%depth = ch1%depth
         ch2%slope = ch1%slope
-        ch2%deg_btm_m = ch1%deg_btm_m / const
-        ch2%deg_bank_m = ch1%deg_bank_m / const
-        ch2%hc_m = ch1%hc_m / const
+        ch2%deg_btm_m = ch1%deg_btm_m
+        ch2%deg_bank_m = ch1%deg_bank_m
+        ch2%hc_m = ch1%hc_m
         ch2%flo_in_mm = ch1%flo_in_mm / const
         ch2%aqu_in_mm = ch1%aqu_in_mm / const
         ch2%flo_mm = ch1%flo_mm / const
+        ch2%sed_stor = ch1%sed_stor / const
+      end function chsd_div
+            
+      function chsd_ave (ch1,const) result (ch2)
+        type (sd_ch_output), intent (in) :: ch1
+        real, intent (in) :: const
+        type (sd_ch_output) :: ch2
+        ch2%flo_in = ch1%flo_in / const
+        ch2%aqu_in = ch1%aqu_in / const
+        ch2%flo = ch1%flo / const
+        ch2%peakr = ch1%peakr / const
+        ch2%sed_in = ch1%sed_in
+        ch2%sed_out = ch1%sed_out
+        ch2%washld = ch1%washld
+        ch2%bedld = ch1%bedld
+        ch2%dep = ch1%dep
+        ch2%deg_btm = ch1%deg_btm
+        ch2%deg_bank = ch1%deg_bank
+        ch2%hc_sed = ch1%hc_sed
+        ch2%width = ch1%width / const
+        ch2%depth = ch1%depth / const
+        ch2%slope = ch1%slope / const
+        ch2%deg_btm_m = ch1%deg_btm_m / const
+        ch2%deg_bank_m = ch1%deg_bank_m / const
+        ch2%hc_m = ch1%hc_m / const
+        ch2%flo_in_mm = ch1%flo_in_mm
+        ch2%aqu_in_mm = ch1%aqu_in_mm
+        ch2%flo_mm = ch1%flo_mm
         ch2%sed_stor = ch1%sed_stor
       end function chsd_ave
-           
+      
       function chsd_mult (const, chn1) result (chn2)
         type (sd_ch_output), intent (in) :: chn1
         real, intent (in) :: const
@@ -446,10 +422,11 @@
         rc2%ttime = rc1%ttime * const
       end function chrc_mult
       
-      subroutine chrc_interp (rc1, rc2, const, rci)
+      subroutine chrc_interp (rc1, rc2, ielev, const, rci)
         type (channel_rating_curve_parameters), intent (in) :: rc1
         type (channel_rating_curve_parameters), intent (in) :: rc2
         type (channel_rating_curve_parameters), intent (out) :: rci
+        integer, intent (in) :: ielev
         real, intent (in) :: const
         rci%xsec_area = rc1%xsec_area + const * (rc2%xsec_area - rc1%xsec_area)
         rci%surf_area = rc1%surf_area + const * (rc2%surf_area - rc1%surf_area)

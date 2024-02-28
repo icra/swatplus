@@ -6,7 +6,7 @@
       use calibration_data_module
       use plant_data_module
       use landuse_data_module
-      use hru_module, only : hru, ihru
+      use hru_module, only : hru, ihru, ipl
       use plant_module
       use output_landscape_module
       use organic_mineral_mass_module
@@ -14,6 +14,7 @@
       implicit none
       
       integer, dimension(:), allocatable :: iarea
+      integer, dimension(:), allocatable :: idp
       integer :: ireg
       integer :: ielem
       real :: area_ha
@@ -24,6 +25,7 @@
       integer :: ilum_db
       real :: constnb
       integer :: icu
+      integer :: j
       real :: constwb
       real :: constpw
               
@@ -321,7 +323,22 @@
 
         end do      ! region(icu)%nlum
       end do        ! db_mx%lsu_out
- 
+         
+      !!this needs to be reworked for regional plant biomass and yield ****
+         if (time%end_aa_prt == 1) then
+           do ipl = 1, pcom(j)%npl
+             idp = pcom(j)%plcur(ipl)%idplt
+             if (pcom(j)%plcur(ipl)%harv_num > 0) then 
+               pl_mass(j)%yield_tot(ipl) = pl_mass(j)%yield_tot(ipl) / float(pcom(j)%plcur(ipl)%harv_num)
+             endif
+            write (4428,103) time%day, time%mo, time%day_mo, time%yrc, j,pldb(idp)%plantnm, pcom(j)%plcur(ipl)
+            if (pco%csvout == "y") then
+              write (4429,'(*(G0.3,:","))') time%day, time%mo, time%day_mo, time%yrc, j,pldb(idp)%plantnm, pcom(j)%plcur(ipl)
+            end if
+           end do
+         end if
+      !!this needs to be reworked for regional plant biomass and yield ****
+
       deallocate (iarea)
       return
       

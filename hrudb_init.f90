@@ -5,6 +5,7 @@
       
       implicit none
 
+      integer :: eof                  !           |end of file
       integer :: imp                  !           |
       integer :: ihru                 !none       |counter 
       integer :: iob                  !           |

@@ -11,6 +11,7 @@
        integer :: eof                  !           |end of file
        integer :: imax                 !none       |determine max number for array (imax) and total number in file
        logical :: i_exist              !none       |check to determine if file exists
+       integer :: i                    !none       |counter
        integer :: ifiltop              !none       |counter  
               
        eof = 0

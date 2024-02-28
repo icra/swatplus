@@ -33,6 +33,7 @@
 
       integer :: j            !none          |counter
       integer :: nly          !none          |number of soil layers
+      real :: xx              !none          |variable to hold value
       real :: sumpor          !mm            |porosity of profile
       real :: pormm           !mm            |porosity in mm depth
       real :: nota            !              |
@@ -181,8 +182,10 @@
       sol(isol)%s%avbd = 2.65 * (1. - sol(isol)%s%avpor)
 
 !!    calculate infiltration parameters for subdaily time step
-      if (time%step > 1) then
-        sol(isol)%phys(1)%sand = 100. - sol(isol)%phys(1)%clay - sol(isol)%phys(1)%silt
+      if (time%step > 0) then
+        sol(isol)%phys(1)%sand = 100. - sol(isol)%phys(1)%clay -     &
+                                    sol(isol)%phys(1)%silt
+        
       end if
 
       return

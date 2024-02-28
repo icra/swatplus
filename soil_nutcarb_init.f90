@@ -21,7 +21,7 @@
       real :: frac_hum_microb           !0-1        |fraction of humus in microbial pool - CENTURY
       real :: frac_hum_slow             !0-1        |fraction of humus in slow pool - CENTURY
       real :: frac_hum_passive          !0-1        |fraction of humus in passive pool - CENTURY
-      real :: actp, solp, ssp
+      real :: actp, solp, ssp, zdst
 
       nly = soil(ihru)%nly
 
@@ -30,7 +30,7 @@
       isolt = sol_plt_ini(isol_pl)%nut          ! isolt = 0 = default in type
       
       !! set soil carbon
-      soil1(ihru)%cbn(1) = max(.001, soildb(isol)%ly(1)%cbn)    !! assume 0.001% carbon if zero
+      soil1(ihru)%cbn(1) = amax1(.001, soildb(isol)%ly(1)%cbn)    !! assume 0.001% carbon if zero
       !! calculate percent carbon for lower layers using exponential decrease
       do ly = 2, nly
         dep_frac = Exp(-solt_db(isolt)%exp_co * soil(ihru)%phys(ly)%d)
@@ -66,7 +66,7 @@
 	    if (bsn_cc%sol_P_model == 0) then 
 	      !! Allow Dynamic PSP Ratio
           !! convert to concentration
-          solp = soil1(ihru)%mp(ly)%lab / wt1
+          solp = soil1(ihru)%mp(ly)%lab / soil(ihru)%phys(ly)%conv_wt * 1000000.
 	      !! PSP = -0.045*log (% clay) + 0.001*(Solution P, mg kg-1) - 0.035*(% Organic C) + 0.43
 	      if (soil(ihru)%phys(ly)%clay > 0.) then
             bsn_prm%psp = -0.045 * log(soil(ihru)%phys(ly)%clay) + (0.001 * solp) 
@@ -86,8 +86,8 @@
         !! Set Stable pool based on dynamic coefficient
 	    if (bsn_cc%sol_P_model == 0) then  !! From White et al 2009 
             !! convert to concentration for ssp calculation
-	        actp = soil1(ihru)%mp(ly)%act / wt1
-		    solp = soil1(ihru)%mp(ly)%lab / wt1
+	        actp = soil1(ihru)%mp(ly)%act / soil(ihru)%phys(ly)%conv_wt * 1000000.
+		    solp = soil1(ihru)%mp(ly)%lab / soil(ihru)%phys(ly)%conv_wt * 1000000.
             !! estimate Total Mineral P in this soil based on data from sharpley 2004
 		    ssp = 25.044 * (actp + solp)** (-0.3833)
 		    !!limit SSP Range
