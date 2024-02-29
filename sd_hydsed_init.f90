@@ -28,9 +28,7 @@
       integer :: idat
       integer :: i_dep                  !none      |counter
       integer :: icha
-      integer :: num_poll !ICRA counter
       integer :: ipoll    !ICRA counter
-      integer :: iob_ch  !ICRA counter
       integer :: ipoll_db               !ICRA      |counter
       character(len=16) :: poll_name   !!          ICRA      |pollutant name
       integer :: isalt
@@ -249,7 +247,6 @@
           sd_ch(ich)%aq_mix_poll(ipoll) = polldb(ipoll_db)%mol_wt ** (-.6666) * (1. - sd_ch(ich)%ch_bd / 2.65) * (69.35 / 365)
         end do
       end do
-      num_poll = cs_db%num_poll
 
       ! initialize pesticides in channel water and benthic from input data
       do ich = 1, sp_ob%chandeg

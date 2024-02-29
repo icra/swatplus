@@ -32,6 +32,10 @@
       ht1 = ob(icmd)%hin    !! set incoming flow
       ht2 = resz            !! zero outgoing flow
 
+      ! ICRA
+      hcs1 = obcs(icmd)%hin
+      hcs2 = hin_csz
+
       if (time%yrc > res_hyd(jres)%iyres .or. (time%mo >= res_hyd(jres)%mores   &
                                    .and. time%yrc == res_hyd(jres)%iyres)) then
         iob = res_ob(jres)%ob
